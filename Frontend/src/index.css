@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #050505;
+  --color-brand-light: #fcfcfd;
+  --color-brand-card-light: #ffffff;
+  --color-brand-text-light: #0f172a; /* Deep Slate for clarity */
+}
+
+/* Logic for Light Theme enhancement */
+.light-theme {
+  background-color: var(--color-brand-light);
+  color: var(--color-brand-text-light);
+}
+
