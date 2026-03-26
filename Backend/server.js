@@ -14,10 +14,11 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/slots', require('./routes/slots'));
-app.use('/api/admin', require('./routes/admin'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/requests', require('./routes/requests'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/slots', require('./routes/slots'));
+app.use('/api/posts', require('./routes/posts'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

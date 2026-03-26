@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { User, Mail, Phone, Calendar, Briefcase, Star, Award, Building, Linkedin, Github, FileText, Camera, Edit2, Check, X } from 'lucide-react';
+import { User, Mail, Phone, Camera, Edit2, Check, X, Shield } from 'lucide-react';
 import axios from 'axios';
 
-const AlumniProfile = ({ isDark }) => {
+const AdminProfile = ({ isDark }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    name: '', email: '', contactNo: '', academicYear: '', domain: '', expertise: '', experience: '', company: '', linkedin: '', github: '', otherDetails: '', profilePicture: ''
+    name: '', email: '', contactNo: '', profilePicture: '', role: 'Admin'
   });
 
   const [editForm, setEditForm] = useState(profile);
@@ -96,26 +96,26 @@ const AlumniProfile = ({ isDark }) => {
     setSuccessMsg('');
   };
 
-  const defaultAvatar = `https://ui-avatars.com/api/?name=${profile.name || 'Alumni'}&background=5c4dff&color=fff`;
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${profile.name || 'Admin'}&background=5c4dff&color=fff`;
 
   if (loading && !profile.email) {
     return (
-      <DashboardLayout isDark={isDark} role="Alumni" userName={profile.name || 'Alumni'}>
+      <DashboardLayout isDark={isDark} role="Admin" userName={profile.name || 'Admin'}>
         <div className="flex h-full items-center justify-center">Loading...</div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout isDark={isDark} role="Alumni" userName={profile.name || 'Alumni'}>
-      <div className="max-w-4xl mx-auto pb-12">
+    <DashboardLayout isDark={isDark} role="Admin" userName={profile.name || 'Admin'}>
+      <div className="max-w-4xl mx-auto">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className={`text-4xl font-black tracking-tight ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
-              Professional Profile
+              Admin Profile
             </h2>
             <p className={`font-medium mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Showcase your expertise and journey to the alumni community.
+              Manage your administrator details and preferences.
             </p>
           </div>
           <button
@@ -161,36 +161,46 @@ const AlumniProfile = ({ isDark }) => {
 
             {/* Profile Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <ProfileField icon={<User size={20} />} label="Full Name" name="name" value={isEditing ? editForm.name : profile.name} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} />
-              <ProfileField icon={<Mail size={20} />} label="Email" name="email" value={profile.email} isEditing={false} onChange={handleEditChange} isDark={isDark} />
-              <ProfileField icon={<Phone size={20} />} label="Contact No." name="contactNo" value={isEditing ? editForm.contactNo : profile.contactNo} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="+1 (555) 000-0000" />
               
-              <ProfileField icon={<Calendar size={20} />} label="Academic Year" name="academicYear" value={isEditing ? editForm.academicYear : profile.academicYear} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 2018 - 2022" />
-              <ProfileField icon={<Briefcase size={20} />} label="Specific Domain" name="domain" value={isEditing ? editForm.domain : profile.domain} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. Computer Science" />
-              <ProfileField icon={<Star size={20} />} label="Expertise / Skills" name="expertise" value={isEditing ? editForm.expertise : profile.expertise} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="React, Node.js, Cloud..." />
-              
-              <ProfileField icon={<Building size={20} />} label="Company Name" name="company" value={isEditing ? editForm.company : profile.company} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. Google, Startup Inc." />
-              <ProfileField icon={<Award size={20} />} label="Years of Exp." name="experience" value={isEditing ? editForm.experience : profile.experience} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 5 Years" />
-              
-              {/* Ensure layout clears columns for links */}
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/10 pt-6 mt-2">
-                <ProfileField icon={<Linkedin size={20} />} label="LinkedIn URL" name="linkedin" value={isEditing ? editForm.linkedin : profile.linkedin} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="https://linkedin.com/in/..." />
-                <ProfileField icon={<Github size={20} />} label="GitHub URL" name="github" value={isEditing ? editForm.github : profile.github} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="https://github.com/..." />
-              </div>
+              <ProfileField
+                icon={<Shield size={20} />}
+                label="System Role"
+                name="role"
+                value="Administrator"
+                isEditing={false}
+                onChange={null}
+                isDark={isDark}
+              />
+              <ProfileField
+                icon={<User size={20} />}
+                label="Full Name"
+                name="name"
+                value={isEditing ? editForm.name : profile.name}
+                isEditing={isEditing}
+                onChange={handleEditChange}
+                isDark={isDark}
+              />
 
-              <div className="md:col-span-2">
-                <ProfileField
-                  icon={<FileText size={20} />}
-                  label="Professional Summary"
-                  name="otherDetails"
-                  value={isEditing ? editForm.otherDetails : profile.otherDetails}
-                  isEditing={isEditing}
-                  onChange={handleEditChange}
-                  isDark={isDark}
-                  isTextArea={true}
-                  placeholder="Share a brief bio, achievements, and impact..."
-                />
-              </div>
+              <ProfileField
+                icon={<Mail size={20} />}
+                label="Email"
+                name="email"
+                value={profile.email} // Non-editable usually
+                isEditing={false}
+                onChange={handleEditChange}
+                isDark={isDark}
+              />
+
+              <ProfileField
+                icon={<Phone size={20} />}
+                label="Contact No."
+                name="contactNo"
+                value={isEditing ? editForm.contactNo : profile.contactNo}
+                isEditing={isEditing}
+                onChange={handleEditChange}
+                isDark={isDark}
+                placeholder="+1 (123) 456-7890"
+              />
 
             </div>
 
@@ -203,7 +213,7 @@ const AlumniProfile = ({ isDark }) => {
                   className="flex items-center gap-2 px-8 py-4 bg-[#5c4dff] text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 active:scale-95 transition-all text-lg"
                 >
                   <Check size={20} />
-                  {loading ? 'Saving...' : 'Save Profile'}
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             )}
@@ -259,4 +269,4 @@ const ProfileField = ({ icon, label, name, value, isEditing, onChange, isDark, i
   );
 };
 
-export default AlumniProfile;
+export default AdminProfile;

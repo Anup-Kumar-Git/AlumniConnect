@@ -11,8 +11,8 @@ const Sidebar = ({ isDark, role, userName = "Student Name" }) => {
   const menuItems = [
     { name: 'Home', icon: <Home size={22} />, path: `/${role.toLowerCase()}-dashboard` },
     { name: role === 'Alumni' ? "Student's Request" : 'Alumni List', icon: <Users size={22} />, path: '/alumni-list' },
-    { name: 'Booked Sessions', icon: <Calendar size={22} />, path: '/sessions' },
-    { name: 'Resume', icon: <FileText size={22} />, path: `/${role.toLowerCase()}-resume` },
+    { name: role === 'Admin' ? 'Pending Approvals' : 'Booked Sessions', icon: <Calendar size={22} />, path: role === 'Admin' ? '/admin-approvals' : '/sessions' },
+    { name: role === 'Admin' ? 'Announcements' : 'Resume', icon: <FileText size={22} />, path: role === 'Admin' ? '/admin-posts' : `/${role.toLowerCase()}-resume` },
     { name: 'Profile', icon: <User size={22} />, path: `/${role.toLowerCase()}-profile` },
   ];
 

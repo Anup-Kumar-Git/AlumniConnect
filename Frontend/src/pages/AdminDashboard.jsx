@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Users, ShieldAlert, Activity } from 'lucide-react';
 import API from '../services/api';
+import { useLocation } from 'react-router-dom';
 
 const AdminDashboard = ({ isDark, setIsDark }) => {
   // FEATURE: Initialized with empty arrays to prevent .map() errors
@@ -54,9 +55,13 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
     { label: 'System Health', val: '99.9%', icon: <Activity className="text-green-400"/>, col: 'bg-green-500/10' },
   ];
 
+  const location = useLocation();
+
   return (
     <DashboardLayout isDark={isDark} role="Admin" userName={userName}>
-      <header className="mb-10 flex justify-between items-center">
+      {location.pathname !== '/admin-approvals' && (
+        <>
+          <header className="mb-10 flex justify-between items-center">
         <div>
           <h2 className={`text-4xl font-black tracking-tight ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
             Welcome, <span className="text-red-500">{userName}</span>
@@ -87,47 +92,50 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
           </div>
         ))}
       </div>
+        </>
+      )}
 
       {/* Pending Approvals Section */}
-      <div className={`p-8 rounded-[3rem] border mb-10 ${isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'}`}>
-        <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Pending Approvals</h3>
-        <div className="space-y-4">
-          {data.pendingAlumni && data.pendingAlumni.length > 0 ? (
-            data.pendingAlumni.map((alumni) => (
-              <div key={alumni._id} className={`p-5 rounded-2xl flex items-center justify-between transition-all ${
-                isDark ? 'bg-white/5 border-transparent hover:bg-white/[0.08]' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white font-black">
-                    {alumni.name ? alumni.name[0] : 'A'}
+      {location.pathname === '/admin-approvals' && (
+        <div className={`p-8 rounded-[3rem] border mb-10 ${isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'}`}>
+          <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Pending Approvals</h3>
+          <div className="space-y-4">
+            {data.pendingAlumni && data.pendingAlumni.length > 0 ? (
+              data.pendingAlumni.map((alumni) => (
+                <div key={alumni._id} className={`p-5 rounded-2xl flex items-center justify-between transition-all ${
+                  isDark ? 'bg-white/5 border-transparent hover:bg-white/[0.08]' : 'bg-slate-50 border-slate-100'
+                }`}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white font-black">
+                      {alumni.name ? alumni.name[0] : 'A'}
+                    </div>
+                    <div>
+                      <p className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{alumni.name}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{alumni.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{alumni.name}</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{alumni.email}</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleVerify(alumni._id)}
+                      className="px-6 py-2.5 bg-green-600 text-white text-xs font-black rounded-xl hover:bg-green-700 active:scale-95 transition-all"
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      onClick={() => handleReject(alumni._id)}
+                      className="px-6 py-2.5 bg-red-600 text-white text-xs font-black rounded-xl hover:bg-red-700 active:scale-95 transition-all"
+                    >
+                      Reject
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleVerify(alumni._id)}
-                    className="px-6 py-2.5 bg-green-600 text-white text-xs font-black rounded-xl hover:bg-green-700 active:scale-95 transition-all"
-                  >
-                    Approve
-                  </button>
-                  <button 
-                    onClick={() => handleReject(alumni._id)}
-                    className="px-6 py-2.5 bg-red-600 text-white text-xs font-black rounded-xl hover:bg-red-700 active:scale-95 transition-all"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-slate-500 italic text-sm text-center py-4">No pending alumni requests.</p>
-          )}
+              ))
+            ) : (
+              <p className="text-slate-500 italic text-sm text-center py-4">No pending alumni requests.</p>
+            )}
+          </div>
         </div>
-      </div>
-
+      )}
 
     </DashboardLayout>
   );

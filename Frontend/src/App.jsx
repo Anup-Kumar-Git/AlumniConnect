@@ -14,6 +14,8 @@ import StudentResume from './pages/StudentResume.jsx';
 import AlumniDashboard from './pages/AlumniDashboard.jsx';
 import AlumniProfile from './pages/AlumniProfile.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminProfile from './pages/AdminProfile.jsx';
+import AdminPosts from './pages/AdminPosts.jsx';
 import AlumniList from './pages/AlumniList.jsx';
 
 function App() {
@@ -38,6 +40,9 @@ function App() {
         <Route path="/alumni-dashboard" element={<AlumniDashboard isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/alumni-profile" element={<AlumniProfile isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/admin-dashboard" element={<AdminDashboard isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/admin-profile" element={<AdminProfile isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/admin-posts" element={<AdminPosts isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/admin-approvals" element={<AdminDashboard isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/alumni-list" element={<AlumniList isDark={isDark} setIsDark={setIsDark} />} />
 
         <Route path="/" element={<Navigate to="/auth" />} />
