@@ -17,7 +17,7 @@ const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }
     { name: 'Home', icon: <Home size={22} />, path: `/${role.toLowerCase()}-dashboard` },
     { name: role === 'Alumni' ? "Student's Request" : 'Alumni List', icon: <Users size={22} />, path: '/alumni-list' },
     { name: role === 'Admin' ? 'Pending Approvals' : 'Booked Sessions', icon: <Calendar size={22} />, path: role === 'Admin' ? '/admin-approvals' : '/sessions' },
-    { name: role === 'Admin' ? 'Announcements' : 'Resume', icon: <FileText size={22} />, path: role === 'Admin' ? '/admin-posts' : `/${role.toLowerCase()}-resume` },
+    { name: role === 'Admin' ? 'Announcements' : (role === 'Alumni' ? 'Connected Students' : 'Resume'), icon: <FileText size={22} />, path: role === 'Admin' ? '/admin-posts' : (role === 'Alumni' ? '/connected-students' : `/${role.toLowerCase()}-resume`) },
     { name: 'Profile', icon: <User size={22} />, path: `/${role.toLowerCase()}-profile` },
   ];
 

@@ -17,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import AdminPosts from './pages/AdminPosts.jsx';
 import AlumniList from './pages/AlumniList.jsx';
+import ConnectedStudents from './pages/ConnectedStudents.jsx';
 
 function App() {
   const [isDark, setIsDark] = useState(true);
@@ -44,6 +45,7 @@ function App() {
         <Route path="/admin-posts" element={<AdminPosts isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/admin-approvals" element={<AdminDashboard isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/alumni-list" element={<AlumniList isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/connected-students" element={<ConnectedStudents isDark={isDark} setIsDark={setIsDark} />} />
 
         <Route path="/" element={<Navigate to="/auth" />} />
       </Routes>
