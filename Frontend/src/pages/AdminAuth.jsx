@@ -23,6 +23,11 @@ const AdminAuth = ({ isDark, setIsDark }) => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userName', res.data.name); 
       localStorage.setItem('role', res.data.role);
+      if (res.data.profilePicture) {
+        localStorage.setItem('profilePicture', res.data.profilePicture);
+      } else {
+        localStorage.removeItem('profilePicture');
+      }
       
       navigate('/admin-dashboard'); 
     } catch (err) {

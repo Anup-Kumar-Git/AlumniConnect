@@ -19,6 +19,7 @@ app.use('/api/requests', require('./routes/requests'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/slots', require('./routes/slots'));
 app.use('/api/posts', require('./routes/posts'));
+app.use('/api/session-requests', require('./routes/sessionRequests'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

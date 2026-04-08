@@ -23,6 +23,11 @@ const StudentAuth = ({ isDark, setIsDark }) => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userName', res.data.name);
       localStorage.setItem('role', res.data.role || 'Student');
+      if (res.data.profilePicture) {
+        localStorage.setItem('profilePicture', res.data.profilePicture);
+      } else {
+        localStorage.removeItem('profilePicture');
+      }
 
       navigate('/student-dashboard');
     } catch (err) {

@@ -17,10 +17,16 @@ exports.getStats = async (req, res) => {
       .select('-password')
       .sort({ name: 1 }); // Alphabetical
 
+    // 4. Fetch Student List
+    const studentList = await User.find({ role: 'Student' })
+      .select('-password')
+      .sort({ name: 1 });
+
     res.json({
       totalUsers,
       pendingAlumni, // This is the array for your "Pending Approvals" section
-      alumniList     // This is the array for your "Active Alumni List" section
+      alumniList,    // This is the array for your "Active Alumni List" section
+      studentList
     });
   } catch (err) {
     console.error("Error in getStats:", err);

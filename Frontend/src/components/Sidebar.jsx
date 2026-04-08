@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Home, Users, Calendar, FileText, User, LogOut 
+  Home, Users, Calendar, FileText, User, LogOut, GraduationCap, MessageSquare, Clock
 } from 'lucide-react';
 
 const Sidebar = ({ isDark, role, userName = "Student Name" }) => {
@@ -10,9 +10,12 @@ const Sidebar = ({ isDark, role, userName = "Student Name" }) => {
   // Navigation links based on the role
   const menuItems = [
     { name: 'Home', icon: <Home size={22} />, path: `/${role.toLowerCase()}-dashboard` },
-    { name: role === 'Alumni' ? "Student's Request" : 'Alumni List', icon: <Users size={22} />, path: '/alumni-list' },
+    { name: role === 'Alumni' ? "Student's Request" : 'Alumni List', icon: role === 'Alumni' ? <Users size={22} /> : <GraduationCap size={22} />, path: '/alumni-list' },
+    ...(role === 'Student' ? [{ name: 'Connections', icon: <Users size={22} />, path: '/student-connections' }] : []),
     { name: role === 'Admin' ? 'Pending Approvals' : 'Booked Sessions', icon: <Calendar size={22} />, path: role === 'Admin' ? '/admin-approvals' : '/sessions' },
+    ...(role === 'Alumni' ? [{ name: 'Pending Sessions', icon: <Clock size={22} />, path: '/pending-sessions' }] : []),
     { name: role === 'Admin' ? 'Announcements' : 'Resume', icon: <FileText size={22} />, path: role === 'Admin' ? '/admin-posts' : `/${role.toLowerCase()}-resume` },
+    { name: 'My Posts', icon: <MessageSquare size={22} />, path: '/my-posts' },
     { name: 'Profile', icon: <User size={22} />, path: `/${role.toLowerCase()}-profile` },
   ];
 

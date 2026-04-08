@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Calendar, CheckCircle, Clock, Megaphone, User } from 'lucide-react';
 import axios from 'axios';
+import PostCard from '../components/PostCard';
 
 const StudentDashboard = ({ isDark, setIsDark }) => {
   const userName = localStorage.getItem('userName') || 'Student';
@@ -49,7 +50,7 @@ const StudentDashboard = ({ isDark, setIsDark }) => {
 
   return (
     <DashboardLayout isDark={isDark} role="Student" userName={userName}>
-      
+
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h2 className={`text-4xl font-black tracking-tight ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
@@ -62,27 +63,19 @@ const StudentDashboard = ({ isDark, setIsDark }) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsDark(!isDark)}
-            className={`p-3 rounded-2xl border transition-all ${
-              isDark ? 'bg-[#1a1a1a] border-white/10 text-white hover:bg-[#252525]' : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-            }`}
-          >
-            {isDark ? '☀️' : '🌙'}
-          </button>
+
         </div>
       </header>
 
       {/* ... rest of your stats and mentor card section ... */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {stats.map((stat, idx) => (
-          <div key={idx} className={`p-6 rounded-[2.5rem] border transition-all ${
-            isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'
-          }`}>
+          <div key={idx} className={`p-8 rounded-[2.5rem] border transition-all ${isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'
+            }`}>
             <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center mb-4`}>
               {stat.icon}
             </div>
-            <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {stat.label}
             </p>
             <h4 className={`text-3xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -93,36 +86,34 @@ const StudentDashboard = ({ isDark, setIsDark }) => {
       </section>
 
       {/* Announcements Section */}
-      {posts.length > 0 && (
-        <section className="mb-10">
-          <h3 className={`text-xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            <Megaphone className="text-red-500" size={24} /> Recent Announcements
-          </h3>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {posts.map(post => (
-              <div key={post._id} className={`p-8 rounded-[2.5rem] border transition-all hover:shadow-lg hover:-translate-y-1 ${
-                isDark ? 'bg-[#0f0f12] border-white/10' : 'bg-white border-slate-200 shadow-sm'
-              }`}>
-                <h4 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{post.title}</h4>
-                <div className={`flex items-center gap-4 mb-4 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <span className="flex items-center gap-1.5 opacity-80">
-                    <User size={14} className="text-indigo-400" /> {post.authorName}
-                  </span>
-                  <span className="flex items-center gap-1.5 opacity-80">
-                    <Clock size={14} className="text-indigo-400" /> {new Date(post.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-                <div className={`p-5 rounded-xl leading-relaxed whitespace-pre-wrap ${isDark ? 'bg-black/20 text-slate-300' : 'bg-white border text-slate-700'}`}>
-                  {post.image && (
-                    <img src={post.image} alt="Announcement" className="w-full max-h-64 object-cover rounded-xl mb-4 border border-white/5 shadow-md" />
-                  )}
-                  {post.content}
-                </div>
-              </div>
-            ))}
+      <section className="mb-10 max-w-3xl mx-auto mt-12">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center gap-4 mb-4 mt-2">
+            <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
+            <span className={`text-[12px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} flex items-center gap-2`}>
+              <span className={`px-2 py-0.5 rounded-full font-bold text-xs ${isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
+                Latest Feed
+              </span>
+            </span>
+            <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
           </div>
-        </section>
-      )}
+
+          {posts.length === 0 ? (
+            <div className={`p-10 rounded-xl border text-center border-dashed ${isDark ? 'bg-[#0f0f12] border-white/10 text-slate-500' : 'bg-slate-50 border-slate-300 text-slate-400'}`}>
+              No announcements visible yet.
+            </div>
+          ) : (
+            posts.map(post => (
+              <PostCard
+                key={post._id}
+                post={post}
+                isDark={isDark}
+                currentUserRole="Student"
+              />
+            ))
+          )}
+        </div>
+      </section>
 
     </DashboardLayout>
   );

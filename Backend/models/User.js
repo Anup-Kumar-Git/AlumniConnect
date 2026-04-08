@@ -17,7 +17,11 @@ const UserSchema = new mongoose.Schema({
   experience: { type: String },
   company: { type: String },
   linkedin: { type: String },
-  github: { type: String }
+  github: { type: String },
+  instituteName: { type: String },
+  degree: { type: String },
+  session: { type: String },
+  department: { type: String }
 });
 
 module.exports = mongoose.model('User', UserSchema);

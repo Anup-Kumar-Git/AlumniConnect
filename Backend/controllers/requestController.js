@@ -96,7 +96,7 @@ exports.getDashboardStats = async (req, res) => {
       const totalRequests = await Request.countDocuments({ student: userId });
       const acceptedRequests = await Request.countDocuments({ student: userId, status: 'Accepted' });
       const pendingRequests = await Request.countDocuments({ student: userId, status: 'Pending' });
-      
+
       stats = {
         totalRequests,
         acceptedRequests,
@@ -115,6 +115,37 @@ exports.getDashboardStats = async (req, res) => {
     }
 
     res.json(stats);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.getStudentConnections = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    // Fetch accepted requests for this student, populate alumni details
+    const requests = await Request.find({ student: studentId, status: 'Accepted' })
+      .populate('alumni', 'name email domain expertise company profilePicture linkedin github')
+      .sort({ createdAt: -1 });
+
+    res.json({ connections: requests });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.getRequestStatus = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const alumniId = req.params.alumniId;
+
+    const request = await Request.findOne({ student: studentId, alumni: alumniId });
+    if (!request) {
+      return res.json({ status: 'None' });
+    }
+    res.json({ status: request.status, requestId: request._id });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

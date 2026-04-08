@@ -8,4 +8,8 @@ router.get('/', auth, postController.getPosts);
 router.post('/', auth, postController.createPost);
 router.delete('/:id', auth, postController.deletePost);
 
+router.put('/like/:id', auth, postController.likePost);
+router.post('/comment/:id', auth, postController.addComment);
+router.delete('/comment/:id/:comment_id', auth, postController.deleteComment);
+
 module.exports = router;

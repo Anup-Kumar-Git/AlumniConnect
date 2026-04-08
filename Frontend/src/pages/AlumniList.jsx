@@ -8,6 +8,8 @@ const AlumniList = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
   const [loadingAction, setLoadingAction] = useState(null);
   const [selectedAlumni, setSelectedAlumni] = useState(null);
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [sendingRequest, setSendingRequest] = useState(false);
   
   const role = localStorage.getItem('role') || 'Admin'; // Assuming Admin if not set for now
   const userName = localStorage.getItem('userName') || role;
@@ -20,7 +22,8 @@ const AlumniList = ({ isDark, setIsDark }) => {
         const res = await axios.get('http://localhost:5000/api/requests/alumni', {
           headers: { 'x-auth-token': token }
         });
-        setDataList(res.data.requests || []);
+        const allRequests = res.data.requests || [];
+        setDataList(allRequests.filter(req => req.status === 'Pending'));
       } else {
         // If Admin or other roles, use admin stats string.
         const res = await API.get('/admin/stats');
@@ -34,6 +37,37 @@ const AlumniList = ({ isDark, setIsDark }) => {
   useEffect(() => {
     fetchData();
   }, [role]);
+
+  const checkRequestStatus = async (alumniId) => {
+    try {
+      if (role !== 'Student') return;
+      setRequestStatus('Loading...');
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`http://localhost:5000/api/requests/status/${alumniId}`, {
+        headers: { 'x-auth-token': token }
+      });
+      setRequestStatus(res.data.status); // 'None', 'Pending', 'Accepted', 'Rejected'
+    } catch (err) {
+      console.error("Failed to fetch request status", err);
+      setRequestStatus('None');
+    }
+  };
+
+  const handleSendRequest = async () => {
+    try {
+      setSendingRequest(true);
+      const token = localStorage.getItem('token');
+      await axios.post(`http://localhost:5000/api/requests`, { alumniId: selectedAlumni._id }, {
+        headers: { 'x-auth-token': token }
+      });
+      setRequestStatus('Pending');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.msg || 'Failed to send request');
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   const handleAction = async (requestId, status) => {
     try {
@@ -79,74 +113,46 @@ const AlumniList = ({ isDark, setIsDark }) => {
       <header className="mb-10 flex justify-between items-center">
         <div>
           <h2 className={`text-4xl font-black tracking-tight ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
-            {role === 'Alumni' ? "Student's Request" : "Active Alumni List"}
+            {role === 'Alumni' ? "Pending Request" : "Active Alumni List"}
           </h2>
           <p className={`font-medium mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             {role === 'Alumni' ? "View and manage mentorship requests from students." : "View verified alumni available for sessions."}
           </p>
         </div>
-        <button 
-          onClick={() => setIsDark(!isDark)}
-          className={`p-3 rounded-2xl border transition-all ${
-            isDark ? 'bg-[#1a1a1a] border-white/10 text-white hover:bg-[#252525]' : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-          }`}
-        >
-          {isDark ? '☀️' : '🌙'}
-        </button>
+        
       </header>
 
-      <div className={`p-8 rounded-[3rem] border ${isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'}`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="py-8">
+        <ul role="list" className="mx-auto grid grid-cols-2 gap-x-8 gap-y-16 text-center sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {dataList && dataList.length > 0 ? (
             dataList.map((item) => {
               const displayData = role === 'Alumni' ? item.student : item;
               if (!displayData) return null;
 
               return (
-                <div key={item._id} className={`p-6 rounded-[2rem] border flex flex-col gap-4 transition-all ${
-                  isDark ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-white border-slate-100 hover:shadow-lg'
-                }`}>
-                  <div className="flex items-center gap-5">
-                    {displayData.profilePicture ? (
-                      <img src={displayData.profilePicture} alt={displayData.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-400/50 shrink-0" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold text-xl shrink-0">
-                        {displayData.name ? displayData.name[0] : 'S'}
-                      </div>
-                    )}
-                    <div>
-                      <p className={`font-bold text-lg leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{displayData.name}</p>
-                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">
-                        {displayData.domain || (role === 'Alumni' ? 'Student' : 'Mentor')}
-                      </p>
-                      <p className={`text-xs mt-1 truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{displayData.email}</p>
+                <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
+                  {displayData.profilePicture ? (
+                    <img className="mx-auto h-24 w-24 rounded-full object-cover" src={displayData.profilePicture} alt={displayData.name} />
+                  ) : (
+                    <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
+                      {displayData.name ? displayData.name[0] : 'A'}
                     </div>
-                  </div>
+                  )}
+                  <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{displayData.name}</h3>
+                  <p className="text-sm leading-6 text-slate-500">{displayData.domain || (role === 'Alumni' ? 'Student' : 'Mentor')}</p>
 
                   {role === 'Alumni' && (
-                    <div className="mt-2 text-sm border-t border-slate-500/20 pt-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className={`font-bold ${item.status === 'Pending' ? 'text-yellow-500' : item.status === 'Accepted' ? 'text-green-500' : 'text-red-500'}`}>
-                          {item.status}
-                        </span>
-                        
-                        {item.student && item.student.resume && (
-                          <button 
-                            onClick={() => handleViewResume(item.student.resume)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                              isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                            }`}
-                          >
-                            <Eye size={14} /> View Resume
-                          </button>
-                        )}
-                      </div>
+                    <div className="mt-4 flex flex-col items-center gap-2">
+                      <span className={`text-xs font-bold ${item.status === 'Pending' ? 'text-yellow-500' : item.status === 'Accepted' ? 'text-green-500' : 'text-red-500'}`}>
+                        {item.status}
+                      </span>
+                      
                       {item.status === 'Pending' && (
                         <div className="flex gap-2">
                           <button 
                             onClick={() => handleAction(item._id, 'Accepted')}
                             disabled={loadingAction === item._id}
-                            className="bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white p-2 rounded-xl transition-colors disabled:opacity-50"
+                            className="bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white p-1.5 rounded-full transition-colors disabled:opacity-50"
                             title="Accept"
                           >
                             <CheckCircle size={18} />
@@ -154,37 +160,49 @@ const AlumniList = ({ isDark, setIsDark }) => {
                           <button 
                             onClick={() => handleAction(item._id, 'Rejected')}
                             disabled={loadingAction === item._id}
-                            className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-xl transition-colors disabled:opacity-50"
+                            className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-full transition-colors disabled:opacity-50"
                             title="Reject"
                           >
                             <XCircle size={18} />
                           </button>
                         </div>
                       )}
+
+                      {item.student && item.student.resume && (
+                        <button 
+                          onClick={() => handleViewResume(item.student.resume)}
+                          className={`mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                            isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                          }`}
+                        >
+                          <Eye size={12} /> Resume
+                        </button>
+                      )}
                     </div>
                   )}
 
                   {role !== 'Alumni' && (
-                    <div className="mt-2 border-t border-slate-500/20 pt-4 flex justify-end">
+                    <div className="mt-4 flex justify-center">
                       <button 
-                        onClick={() => setSelectedAlumni(displayData)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                        }`}
+                        onClick={() => {
+                          setSelectedAlumni(displayData);
+                          if (role === 'Student') checkRequestStatus(displayData._id);
+                        }}
+                        className={`text-xs font-bold hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
                       >
                         View Profile
                       </button>
                     </div>
                   )}
-                </div>
+                </li>
               );
             })
           ) : (
             <p className="text-slate-500 italic text-sm col-span-full text-center py-8">
-              {role === 'Alumni' ? "No student requests found." : "No verified alumni found."}
+              {role === 'Alumni' ? "No pending requests found." : "No verified alumni found."}
             </p>
           )}
-        </div>
+        </ul>
       </div>
 
       {/* Profile Modal Overlay */}
@@ -198,12 +216,30 @@ const AlumniList = ({ isDark, setIsDark }) => {
               <h3 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Alumni Profile
               </h3>
-              <button 
-                onClick={() => setSelectedAlumni(null)}
-                className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'}`}
-              >
-                <X size={24} />
-              </button>
+              <div className="flex items-center gap-4">
+                {role === 'Student' && requestStatus && requestStatus !== 'Loading...' && (
+                  <button 
+                    onClick={handleSendRequest}
+                    disabled={sendingRequest || requestStatus === 'Pending' || requestStatus === 'Accepted'}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                      requestStatus === 'Accepted' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                      requestStatus === 'Pending' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
+                      'bg-[#5c4dff] text-white hover:bg-[#4839cc] hover:shadow-lg disabled:opacity-50'
+                    }`}
+                  >
+                    {sendingRequest ? 'Sending...' : 
+                     requestStatus === 'Accepted' ? '✓ Connected' : 
+                     requestStatus === 'Pending' ? 'Request Pending' : 
+                     'Send Request'}
+                  </button>
+                )}
+                <button 
+                  onClick={() => setSelectedAlumni(null)}
+                  className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'}`}
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}

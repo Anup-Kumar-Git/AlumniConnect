@@ -63,65 +63,47 @@ const ConnectedStudents = ({ isDark, setIsDark }) => {
             View the list of students whose mentorship requests you have accepted.
           </p>
         </div>
-        <button 
-          onClick={() => setIsDark(!isDark)}
-          className={`p-3 rounded-2xl border transition-all ${
-            isDark ? 'bg-[#1a1a1a] border-white/10 text-white hover:bg-[#252525]' : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-          }`}
-        >
-          {isDark ? '☀️' : '🌙'}
-        </button>
+        
       </header>
 
-      <div className={`p-8 rounded-[3rem] border ${isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'}`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="py-8">
+        <ul role="list" className="mx-auto grid grid-cols-2 gap-x-8 gap-y-16 text-center sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {dataList && dataList.length > 0 ? (
             dataList.map((item) => {
               const student = item.student;
               if (!student) return null;
 
               return (
-                <div key={item._id} className={`p-6 rounded-[2rem] border flex flex-col gap-4 transition-all ${
-                  isDark ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-white border-slate-100 hover:shadow-lg'
-                }`}>
-                  <div className="flex items-center gap-5">
-                    {student.profilePicture ? (
-                      <img src={student.profilePicture} alt={student.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-400/50 shrink-0" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold text-xl shrink-0">
-                        {student.name ? student.name[0] : 'S'}
-                      </div>
-                    )}
-                    <div>
-                      <p className={`font-bold text-lg leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{student.name}</p>
-                      <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">
-                        {student.domain || 'Student'}
-                      </p>
-                      <p className={`text-xs mt-1 truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{student.email}</p>
+                <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
+                  {student.profilePicture ? (
+                    <img className="mx-auto h-24 w-24 rounded-full object-cover" src={student.profilePicture} alt={student.name} />
+                  ) : (
+                    <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
+                      {student.name ? student.name[0] : 'S'}
                     </div>
-                  </div>
+                  )}
+                  <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
+                  <p className="text-sm leading-6 text-slate-500">{student.domain || 'Student'}</p>
 
-                  <div className="mt-2 border-t border-slate-500/20 pt-4 flex items-center justify-between">
+                  <div className="mt-4 flex flex-col items-center gap-2">
                     {student.resume && (
                       <button 
                         onClick={() => handleViewResume(student.resume)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
                           isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                         }`}
                       >
-                        <Eye size={14} /> View Resume
+                        <Eye size={12} /> Resume
                       </button>
                     )}
                     <button 
                       onClick={() => setSelectedStudent(student)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                      }`}
+                      className={`text-xs font-bold hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
                     >
                       View Profile
                     </button>
                   </div>
-                </div>
+                </li>
               );
             })
           ) : (
@@ -129,7 +111,7 @@ const ConnectedStudents = ({ isDark, setIsDark }) => {
               No connected students found.
             </p>
           )}
-        </div>
+        </ul>
       </div>
 
       {/* Profile Modal Overlay */}

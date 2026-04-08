@@ -11,6 +11,8 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
     pendingAlumni: [],
     alumniList: []
   });
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const userName = localStorage.getItem('userName') || 'Admin';
 
@@ -49,10 +51,15 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
     }
   };
 
+  const handleViewProfile = (alumni) => {
+    setSelectedProfile(alumni);
+    setShowModal(true);
+  };
+
   const stats = [
-    { label: 'Total Users', val: data.totalUsers, icon: <Users className="text-blue-400"/>, col: 'bg-blue-500/10' },
-    { label: 'Pending Approvals', val: data.pendingAlumni.length, icon: <ShieldAlert className="text-red-400"/>, col: 'bg-red-500/10' },
-    { label: 'System Health', val: '99.9%', icon: <Activity className="text-green-400"/>, col: 'bg-green-500/10' },
+    { label: 'Total Users', value: data.totalUsers, icon: <Users className="text-blue-400"/>, color: 'bg-blue-500/10' },
+    { label: 'Pending Approvals', value: data.pendingAlumni.length, icon: <ShieldAlert className="text-red-400"/>, color: 'bg-red-500/10' },
+    { label: 'System Health', value: '99.9%', icon: <Activity className="text-green-400"/>, color: 'bg-green-500/10' },
   ];
 
   const location = useLocation();
@@ -70,25 +77,24 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
             Manage users, approvals, and platform health.
           </p>
         </div>
-        <button 
-          onClick={() => setIsDark(!isDark)}
-          className={`p-3 rounded-2xl border transition-all ${
-            isDark ? 'bg-[#1a1a1a] border-white/10 text-white hover:bg-[#252525]' : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-          }`}
-        >
-          {isDark ? '☀️' : '🌙'}
-        </button>
+        
       </header>
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {stats.map((s, i) => (
-          <div key={i} className={`p-8 rounded-[2.5rem] border transition-all ${
+        {stats.map((stat, idx) => (
+          <div key={idx} className={`p-8 rounded-[2.5rem] border transition-all ${
             isDark ? 'bg-[#0f0f12] border-white/10 shadow-2xl' : 'bg-white border-slate-100 shadow-xl'
           }`}>
-            <div className={`w-12 h-12 rounded-2xl ${s.col} flex items-center justify-center mb-4`}>{s.icon}</div>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{s.label}</p>
-            <h4 className={`text-3xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.val}</h4>
+            <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center mb-4`}>
+              {stat.icon}
+            </div>
+            <p className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {stat.label}
+            </p>
+            <h4 className={`text-3xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {stat.value}
+            </h4>
           </div>
         ))}
       </div>
@@ -116,6 +122,12 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
                   </div>
                   <div className="flex gap-2">
                     <button 
+                      onClick={() => handleViewProfile(alumni)}
+                      className="px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 active:scale-95 transition-all"
+                    >
+                      View Profile
+                    </button>
+                    <button 
                       onClick={() => handleVerify(alumni._id)}
                       className="px-6 py-2.5 bg-green-600 text-white text-xs font-black rounded-xl hover:bg-green-700 active:scale-95 transition-all"
                     >
@@ -133,6 +145,59 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
             ) : (
               <p className="text-slate-500 italic text-sm text-center py-4">No pending alumni requests.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* View Profile Modal */}
+      {showModal && selectedProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className={`w-full max-w-lg p-8 rounded-[2.5rem] shadow-2xl relative ${isDark ? 'bg-[#0f0f12] text-white border border-white/10' : 'bg-white text-slate-900 border border-slate-100'}`}>
+            <button 
+              onClick={() => setShowModal(false)}
+              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white transition-all font-bold"
+            >
+              ✕
+            </button>
+            <h3 className="text-2xl font-black mb-6">Alumni Profile</h3>
+            
+            <div className="space-y-4">
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Full Name</p>
+                <p className="font-medium text-lg">{selectedProfile.name}</p>
+              </div>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Email Address</p>
+                <p className="font-medium">{selectedProfile.email}</p>
+              </div>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Institute Name</p>
+                <p className="font-medium">{selectedProfile.instituteName || 'Not specified'}</p>
+              </div>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Department</p>
+                <p className="font-medium">{selectedProfile.department || 'Not specified'}</p>
+              </div>
+              <div className="flex gap-4">
+                <div className={`flex-1 p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                  <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Degree/Program</p>
+                  <p className="font-medium">{selectedProfile.degree || 'Not specified'}</p>
+                </div>
+                <div className={`w-1/3 p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                  <p className={`text-xs uppercase font-bold tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Session</p>
+                  <p className="font-medium">{selectedProfile.session || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-8 flex gap-3">
+              <button 
+                onClick={() => { handleVerify(selectedProfile._id); setShowModal(false); }}
+                className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all"
+              >
+                Approve Allowed
+              </button>
+            </div>
           </div>
         </div>
       )}

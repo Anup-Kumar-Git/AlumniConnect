@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
-  const { name, email, password, role, domain } = req.body;
+  const { name, email, password, role, domain, instituteName, degree, session, department, profilePicture } = req.body;
   try {
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ msg: 'User already exists' });
@@ -11,7 +11,7 @@ exports.register = async (req, res) => {
     // Students/Admins are auto-verified, Alumni start as false
     const isVerified = (role === 'Student' || role === 'Admin');
 
-    user = new User({ name, email, password, role, domain, isVerified });
+    user = new User({ name, email, password, role, domain, isVerified, instituteName, degree, session, department, profilePicture });
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
     const payload = { user: { id: user.id, role: user.role } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
       if (err) throw err;
-      res.json({ token, name: user.name, role: user.role });
+      res.json({ token, name: user.name, role: user.role, profilePicture: user.profilePicture });
     });
   } catch (err) {
     res.status(500).send('Server Error');
@@ -58,7 +58,7 @@ exports.login = async (req, res) => {
     const payload = { user: { id: user.id, role: user.role } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
       if (err) throw err;
-      res.json({ token, name: user.name, role: user.role });
+      res.json({ token, name: user.name, role: user.role, profilePicture: user.profilePicture });
     });
   } catch (err) {
     res.status(500).send('Server Error');

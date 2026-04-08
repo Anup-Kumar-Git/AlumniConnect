@@ -23,4 +23,14 @@ router.put('/:id/status', auth, requestController.updateRequestStatus);
 // @access  Private
 router.get('/stats/dashboard', auth, requestController.getDashboardStats);
 
+// @route   GET api/requests/student/connections
+// @desc    Get accepted connections for a student
+// @access  Private (Student)
+router.get('/student/connections', auth, requestController.getStudentConnections);
+
+// @route   GET api/requests/status/:alumniId
+// @desc    Check request status between student and alumni
+// @access  Private (Student)
+router.get('/status/:alumniId', auth, requestController.getRequestStatus);
+
 module.exports = router;
