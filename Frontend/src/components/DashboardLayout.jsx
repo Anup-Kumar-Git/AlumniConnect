@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Home, Users, Calendar, FileText, User, LogOut, Menu, X, Search, Bell, ChevronDown, Settings, Sun, Moon, GraduationCap, UserCheck, MessageSquare, Clock } from 'lucide-react';
 import { ThemeContext } from '../App';
+import NotificationsDropdown from './NotificationsDropdown';
 
 const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
@@ -153,10 +154,7 @@ const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <button className={`relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-colors ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#15181e]"></span>
-            </button>
+            <NotificationsDropdown isDark={isDark} />
 
             {/* Divider */}
             <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>

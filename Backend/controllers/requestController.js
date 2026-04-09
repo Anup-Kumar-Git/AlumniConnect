@@ -1,5 +1,6 @@
 const Request = require('../models/Request');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 exports.createRequest = async (req, res) => {
   try {
@@ -30,6 +31,14 @@ exports.createRequest = async (req, res) => {
     });
 
     await newRequest.save();
+
+    await Notification.create({
+      recipient: alumniId,
+      sender: studentId,
+      type: 'CONNECTION_REQUEST',
+      message: 'You have a new mentorship connection request.'
+    });
+
     res.json({ msg: 'Appointment requested successfully', request: newRequest });
   } catch (err) {
     console.error(err.message);
@@ -73,6 +82,18 @@ exports.updateRequestStatus = async (req, res) => {
 
     request.status = status;
     await request.save();
+
+    const type = status === 'Accepted' ? 'CONNECTION_ACCEPTED' : 'CONNECTION_REJECTED';
+    const message = status === 'Accepted' 
+      ? 'Your mentorship connection request was accepted.' 
+      : 'Your mentorship connection request was declined.';
+      
+    await Notification.create({
+      recipient: request.student,
+      sender: request.alumni,
+      type,
+      message
+    });
 
     res.json({ msg: `Request ${status.toLowerCase()} successfully`, request });
   } catch (err) {

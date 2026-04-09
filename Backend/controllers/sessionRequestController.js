@@ -1,5 +1,6 @@
 const SessionRequest = require('../models/SessionRequest');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // Create a session request
 exports.createSessionRequest = async (req, res) => {
@@ -30,6 +31,14 @@ exports.createSessionRequest = async (req, res) => {
     });
 
     await newSessionRequest.save();
+
+    await Notification.create({
+      recipient: alumniId,
+      sender: studentId,
+      type: 'SESSION_REQUEST',
+      message: 'A student has requested a mentorship session with you.'
+    });
+
     res.json({ msg: 'Session requested successfully', sessionRequest: newSessionRequest });
   } catch (err) {
     console.error(err.message);
@@ -79,6 +88,18 @@ exports.updateSessionRequestStatus = async (req, res) => {
     }
     
     await request.save();
+
+    const type = status === 'Accepted' ? 'SESSION_ACCEPTED' : 'SESSION_REJECTED';
+    const message = status === 'Accepted' 
+      ? 'Your session request has been booked! Check Booked Sessions for details.' 
+      : 'Your session request was declined.';
+
+    await Notification.create({
+      recipient: request.student,
+      sender: request.alumni,
+      type,
+      message
+    });
 
     res.json({ msg: `Session Request ${status.toLowerCase()}`, request });
   } catch (err) {
