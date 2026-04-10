@@ -1,6 +1,7 @@
 const Post = require('../models/Post');
 const User = require('../models/User');
 const Request = require('../models/Request');
+const Notification = require('../models/Notification');
 
 // @route   GET /api/posts
 // @desc    Get all posts (announcements)
@@ -126,6 +127,17 @@ exports.likePost = async (req, res) => {
       post.likes.splice(removeIndex, 1);
     } else {
       post.likes.unshift({ user: req.user.id });
+
+      // Notify post author if not liking own post
+      if (post.author.toString() !== req.user.id.toString()) {
+        const liker = await User.findById(req.user.id);
+        await Notification.create({
+          recipient: post.author,
+          sender: req.user.id,
+          type: 'POST_LIKED',
+          message: `${liker ? liker.name : 'Someone'} liked your post.`
+        });
+      }
     }
 
     await post.save();
@@ -153,6 +165,17 @@ exports.addComment = async (req, res) => {
     post.comments.push(newComment); // Add to end of array
 
     await post.save();
+
+    // Notify post author if not commenting on own post
+    if (post.author.toString() !== req.user.id.toString()) {
+      await Notification.create({
+        recipient: post.author,
+        sender: req.user.id,
+        type: 'POST_COMMENTED',
+        message: `${user.name || 'Someone'} commented on your post.`
+      });
+    }
+
     res.json(post.comments);
   } catch (err) {
     console.error(err.message);

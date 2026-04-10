@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Bell, Check, UserCheck, AlertCircle } from 'lucide-react';
+import { Bell, Check, UserCheck, AlertCircle, Heart, MessageSquare } from 'lucide-react';
 
 const NotificationsDropdown = ({ isDark }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,6 +66,10 @@ const NotificationsDropdown = ({ isDark }) => {
       case 'CONNECTION_ACCEPTED':
       case 'SESSION_ACCEPTED':
         return <Check size={16} className="text-green-500" />;
+      case 'POST_LIKED':
+        return <Heart size={16} className="text-pink-500" />;
+      case 'POST_COMMENTED':
+        return <MessageSquare size={16} className="text-blue-500" />;
       default:
         return <UserCheck size={16} className="text-indigo-500" />;
     }

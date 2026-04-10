@@ -11,7 +11,9 @@ const NotificationSchema = new mongoose.Schema({
       'CONNECTION_REJECTED', 
       'SESSION_REQUEST', 
       'SESSION_ACCEPTED', 
-      'SESSION_REJECTED'
+      'SESSION_REJECTED',
+      'POST_LIKED',
+      'POST_COMMENTED'
     ],
     required: true 
   },
