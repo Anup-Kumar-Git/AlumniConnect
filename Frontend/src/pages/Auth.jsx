@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Auth = ({ isDark, setIsDark }) => {
   const navigate = useNavigate();
+
+  const handleRoleClick = (role) => {
+    const token = localStorage.getItem('token');
+    const storedRole = localStorage.getItem('role');
+    
+    // If they already have an active login for this role, auto-redirect!
+    if (token && storedRole === role) {
+      navigate(`/${role.toLowerCase()}-dashboard`);
+    } else {
+      // Otherwise, go to login screen
+      navigate(`/${role.toLowerCase()}-auth`);
+    }
+  };
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all duration-500 ${
@@ -34,8 +47,7 @@ const Auth = ({ isDark, setIsDark }) => {
         {['Student', 'Alumni', 'Admin'].map((role) => (
           <div
             key={role}
-            // FIXED: Path now includes "-auth" to match App.jsx routes
-            onClick={() => navigate(`/${role.toLowerCase()}-auth`)}
+            onClick={() => handleRoleClick(role)}
             className={`p-10 rounded-[2.5rem] border transition-all cursor-pointer hover:scale-[1.02] ${
               isDark 
               ? 'bg-[#0f0f12] border-white/5 hover:bg-white/10' 

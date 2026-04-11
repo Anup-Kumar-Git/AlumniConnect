@@ -14,4 +14,19 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
+// Auto-logout user if token expires (401 Unauthorized)
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('profilePicture');
+      window.location.href = '/auth'; // Force to login screen
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default API;

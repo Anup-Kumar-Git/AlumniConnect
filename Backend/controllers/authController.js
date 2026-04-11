@@ -24,7 +24,7 @@ exports.register = async (req, res) => {
 
     // Auto-login for Students/Admins
     const payload = { user: { id: user.id, role: user.role } };
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30m' }, (err, token) => {
       if (err) throw err;
       res.json({ token, name: user.name, role: user.role, profilePicture: user.profilePicture });
     });
@@ -56,7 +56,7 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
 
     const payload = { user: { id: user.id, role: user.role } };
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30m' }, (err, token) => {
       if (err) throw err;
       res.json({ token, name: user.name, role: user.role, profilePicture: user.profilePicture });
     });

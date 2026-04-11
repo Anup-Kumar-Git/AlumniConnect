@@ -13,6 +13,8 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
   });
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [rejectionTarget, setRejectionTarget] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const userName = localStorage.getItem('userName') || 'Admin';
 
@@ -39,12 +41,17 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
     }
   };
 
-  const handleReject = async (id) => {
-    if (!window.confirm("Are you sure you want to reject and delete this request?")) return;
-    
+  const executeRejectionAndMail = async () => {
+    if (!rejectionTarget) return;
     try {
-      // Logic: Delete user and immediately refresh the dashboard lists
-      await API.delete(`/admin/reject/${id}`);
+      await API.delete(`/admin/reject/${rejectionTarget._id}`);
+      
+      const subject = encodeURIComponent("Update on AlumniConnect Registration");
+      const body = encodeURIComponent(`Dear ${rejectionTarget.name},\n\nYour recent registration request for AlumniConnect could not be approved.\n\nReason:\n${rejectionReason}\n\nBest Regards,\nAdmin Team`);
+      window.location.href = `mailto:${rejectionTarget.email}?subject=${subject}&body=${body}`;
+
+      setRejectionTarget(null);
+      setRejectionReason("");
       fetchAdminData(); 
     } catch (err) {
       alert(err.response?.data?.msg || "Rejection failed");
@@ -134,7 +141,7 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
                       Approve
                     </button>
                     <button 
-                      onClick={() => handleReject(alumni._id)}
+                      onClick={() => setRejectionTarget(alumni)}
                       className="px-6 py-2.5 bg-red-600 text-white text-xs font-black rounded-xl hover:bg-red-700 active:scale-95 transition-all"
                     >
                       Reject
@@ -196,6 +203,48 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
                 className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all"
               >
                 Approve Allowed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Email Modal Overlay */}
+      {rejectionTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRejectionTarget(null)}></div>
+          <div className={`relative w-full max-w-lg p-8 rounded-3xl shadow-2xl transition-all ${isDark ? 'bg-[#0f0f12] border border-red-500/30' : 'bg-white border border-red-200'}`}>
+            <h3 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Reject Alumni Application</h3>
+            <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Please provide a reason to email the applicant before rejecting their request.</p>
+
+            <div className="mb-4">
+              <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>To:</label>
+              <input type="text" readOnly value={rejectionTarget.email} className={`w-full p-3 rounded-xl border opacity-70 cursor-not-allowed ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`} />
+            </div>
+
+            <div className="mb-6">
+              <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Reason for Rejection:</label>
+              <textarea 
+                rows="4"
+                className={`w-full p-4 rounded-xl border focus:outline-none focus:ring-2 focus:ring-red-500/50 ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'}`}
+                placeholder="Type the reason (e.g., identity could not be verified)..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setRejectionTarget(null)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeRejectionAndMail}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2"
+              >
+                Send Email & Reject
               </button>
             </div>
           </div>
