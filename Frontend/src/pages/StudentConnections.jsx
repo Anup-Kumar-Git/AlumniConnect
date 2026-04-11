@@ -57,96 +57,89 @@ const StudentConnections = ({ isDark, setIsDark }) => {
       </header>
 
       <div className="py-4">
-        <ul role="list" className={`divide-y ${isDark ? 'divide-slate-800/60' : 'divide-slate-200'}`}>
+        <ul role="list" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
           {dataList && dataList.length > 0 ? (
             dataList.map((item) => {
               const alumni = item.alumni;
               if (!alumni) return null;
 
               return (
-                <li key={item._id} className="py-10 flex flex-col sm:flex-row gap-8 items-start">
-                  {/* Left: Avatar */}
-                  <div className="shrink-0">
+                <li key={item._id} className="flex flex-col">
+                  {/* Top: Large Image */}
+                  <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden mb-5 bg-indigo-500/10 flex items-center justify-center shadow-sm">
                     {alumni.profilePicture ? (
-                      <img className="h-40 w-40 sm:h-48 sm:w-48 rounded-2xl object-cover shadow-lg" src={alumni.profilePicture} alt={alumni.name} />
+                      <img className="w-full h-full object-cover" src={alumni.profilePicture} alt={alumni.name} />
                     ) : (
-                      <div className="h-40 w-40 sm:h-48 sm:w-48 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-6xl shadow-inner">
+                      <span className="text-indigo-500 font-black text-6xl shadow-inner">
                         {alumni.name ? alumni.name[0] : 'A'}
-                      </div>
+                      </span>
                     )}
                   </div>
 
-                  {/* Right: Info */}
-                  <div className="flex-1 flex flex-col justify-center pt-2">
-                    <h3 className={`text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{alumni.name}</h3>
-                    <p className="text-sm font-semibold text-slate-500 mt-1">{alumni.domain || 'Mentor'}</p>
+                  {/* Info */}
+                  <h3 className={`text-xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{alumni.name}</h3>
+                  <p className="text-[15px] font-medium text-slate-500 mt-1 mb-4">{alumni.domain || 'Mentor'}</p>
 
-                    <p className={`mt-4 text-base leading-relaxed max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                      {alumni.otherDetails || "This member has not provided a detailed biography. However, they possess valuable experience and are ready to mentor students in their specific domain."}
-                    </p>
+                  {/* Social Icons */}
+                  <div className="flex items-center gap-4 mb-6">
+                    {alumni.github && (
+                      <a href={alumni.github} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}>
+                        <span className="sr-only">GitHub</span>
+                        <Github size={20} className="opacity-80" strokeWidth={2.5} />
+                      </a>
+                    )}
+                    {alumni.linkedin && (
+                      <a href={alumni.linkedin} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}>
+                        <span className="sr-only">LinkedIn</span>
+                        <Linkedin size={20} className="opacity-80" strokeWidth={2.5} />
+                      </a>
+                    )}
+                  </div>
 
-                    <div className="mt-6 flex flex-col gap-4">
-                      <div className="flex items-center gap-x-5">
-                        {alumni.github && (
-                          <a href={alumni.github} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-                            <span className="sr-only">GitHub</span>
-                            <Github size={20} />
-                          </a>
-                        )}
-                        {alumni.linkedin && (
-                          <a href={alumni.linkedin} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-                            <span className="sr-only">LinkedIn</span>
-                            <Linkedin size={20} />
-                          </a>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => setSelectedAlumni(alumni)}
-                          className={`px-5 py-2 rounded-xl text-sm font-bold transition-all duration-300 hover:-translate-y-1 border ${isDark ? 'border-white/10 text-slate-300 hover:bg-white/10 hover:shadow-white/5 hover:text-white hover:border-white/30 hover:shadow-lg' : 'border-slate-200 text-slate-700 hover:bg-white hover:shadow-slate-200/50 hover:shadow-lg hover:border-slate-400 font-semibold'
-                            }`}
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (requestedAlumni[alumni._id]) return;
-                            try {
-                              const token = localStorage.getItem('token');
-                              const res = await axios.post('http://localhost:5000/api/session-requests', { alumniId: alumni._id }, {
-                                headers: { 'x-auth-token': token }
-                              });
-                              alert(res.data.msg);
-                              setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
-                            } catch (err) {
-                              if (err.response?.data?.msg === 'You already requested a session with this Alumni') {
-                                setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
-                              }
-                              alert(err.response?.data?.msg || 'Failed to request session');
-                            }
-                          }}
-                          disabled={requestedAlumni[alumni._id]}
-                          className={`px-5 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
-                            requestedAlumni[alumni._id] 
-                            ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 cursor-not-allowed border border-yellow-500/20' 
-                            : 'hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 bg-[#5c4dff] text-white hover:bg-[#4b3ce5]'
-                          }`}
-                        >
-                          {requestedAlumni[alumni._id] ? 'Requested' : 'Request Session'}
-                        </button>
-                      </div>
-                    </div>
+                  {/* Action Buttons */}
+                  <div className="mt-auto flex flex-row gap-2">
+                    <button
+                      onClick={() => setSelectedAlumni(alumni)}
+                      className={`flex-1 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 border ${isDark ? 'border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold'}`}
+                    >
+                      Profile
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (requestedAlumni[alumni._id]) return;
+                        try {
+                          const token = localStorage.getItem('token');
+                          const res = await axios.post('http://localhost:5000/api/session-requests', { alumniId: alumni._id }, {
+                            headers: { 'x-auth-token': token }
+                          });
+                          alert(res.data.msg);
+                          setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
+                        } catch (err) {
+                          if (err.response?.data?.msg === 'You already requested a session with this Alumni') {
+                            setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
+                          }
+                          alert(err.response?.data?.msg || 'Failed to request session');
+                        }
+                      }}
+                      disabled={requestedAlumni[alumni._id]}
+                      className={`flex-1 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 ${
+                        requestedAlumni[alumni._id] 
+                        ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 cursor-not-allowed border border-yellow-500/20' 
+                        : 'bg-[#5c4dff] text-white hover:bg-[#4b3ce5]'
+                      }`}
+                    >
+                      {requestedAlumni[alumni._id] ? 'Requested' : 'Session'}
+                    </button>
                   </div>
                 </li>
               );
             })
           ) : (
-            <li className="py-12">
-              <p className="text-slate-500 italic text-sm text-center">
+            <div className="col-span-full py-16 text-center">
+              <p className="text-slate-500 italic text-sm">
                 No accepted connections found yet.
               </p>
-            </li>
+            </div>
           )}
         </ul>
       </div>

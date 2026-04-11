@@ -85,6 +85,21 @@ const AlumniList = ({ isDark, setIsDark }) => {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm("Are you sure you want to completely delete this user?")) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:5000/api/admin/${userId}`, {
+          headers: { 'x-auth-token': token }
+        });
+        fetchData(); // refresh list
+      } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.msg || "Failed to delete user");
+      }
+    }
+  };
+
   const handleViewResume = (resumeData) => {
     if (!resumeData) return;
     if (!resumeData.startsWith('data:')) {
@@ -182,7 +197,7 @@ const AlumniList = ({ isDark, setIsDark }) => {
                   )}
 
                   {role !== 'Alumni' && (
-                    <div className="mt-4 flex justify-center">
+                    <div className="mt-4 flex gap-3 justify-center items-center">
                       <button 
                         onClick={() => {
                           setSelectedAlumni(displayData);
@@ -192,6 +207,14 @@ const AlumniList = ({ isDark, setIsDark }) => {
                       >
                         View Profile
                       </button>
+                      {role === 'Admin' && (
+                        <button 
+                          onClick={() => handleDeleteUser(displayData._id)}
+                          className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline transition-colors"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   )}
                 </li>

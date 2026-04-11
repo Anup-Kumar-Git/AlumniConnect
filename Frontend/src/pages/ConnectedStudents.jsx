@@ -67,49 +67,71 @@ const ConnectedStudents = ({ isDark, setIsDark }) => {
       </header>
 
       <div className="py-8">
-        <ul role="list" className="mx-auto grid grid-cols-2 gap-x-8 gap-y-16 text-center sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <ul role="list" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
           {dataList && dataList.length > 0 ? (
             dataList.map((item) => {
               const student = item.student;
               if (!student) return null;
 
               return (
-                <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
-                  {student.profilePicture ? (
-                    <img className="mx-auto h-24 w-24 rounded-full object-cover" src={student.profilePicture} alt={student.name} />
-                  ) : (
-                    <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
-                      {student.name ? student.name[0] : 'S'}
-                    </div>
-                  )}
-                  <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
-                  <p className="text-sm leading-6 text-slate-500">{student.domain || 'Student'}</p>
-
-                  <div className="mt-4 flex flex-col items-center gap-2">
-                    {student.resume && (
-                      <button 
-                        onClick={() => handleViewResume(student.resume)}
-                        className={`mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
-                          isDark ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                        }`}
-                      >
-                        <Eye size={12} /> Resume
-                      </button>
+                <li key={item._id} className="flex flex-col">
+                  {/* Top: Large Image */}
+                  <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden mb-5 bg-indigo-500/10 flex items-center justify-center shadow-sm">
+                    {student.profilePicture ? (
+                      <img className="w-full h-full object-cover" src={student.profilePicture} alt={student.name} />
+                    ) : (
+                      <span className="text-indigo-500 font-black text-6xl shadow-inner">
+                        {student.name ? student.name[0] : 'S'}
+                      </span>
                     )}
-                    <button 
+                  </div>
+
+                  {/* Info */}
+                  <h3 className={`text-xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
+                  <p className="text-[15px] font-medium text-slate-500 mt-1 mb-4">{student.domain || 'Student'}</p>
+
+                  {/* Social Icons */}
+                  <div className="flex items-center gap-4 mb-6">
+                    {student.github && (
+                      <a href={student.github} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}>
+                        <span className="sr-only">GitHub</span>
+                        <Github size={20} className="opacity-80" strokeWidth={2.5} />
+                      </a>
+                    )}
+                    {student.linkedin && (
+                      <a href={student.linkedin} target="_blank" rel="noreferrer" className={`transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}>
+                        <span className="sr-only">LinkedIn</span>
+                        <Linkedin size={20} className="opacity-80" strokeWidth={2.5} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-auto flex flex-row gap-2">
+                    <button
                       onClick={() => setSelectedStudent(student)}
-                      className={`text-xs font-bold hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
+                      className={`flex-1 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 border ${isDark ? 'border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold'}`}
                     >
                       View Profile
                     </button>
+                    {student.resume && (
+                      <button
+                        onClick={() => handleViewResume(student.resume)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 bg-[#5c4dff] text-white hover:bg-[#4b3ce5]`}
+                      >
+                        <Eye size={16} /> View Resume
+                      </button>
+                    )}
                   </div>
                 </li>
               );
             })
           ) : (
-            <p className="text-slate-500 italic text-sm col-span-full text-center py-8">
-              No connected students found.
-            </p>
+            <div className="col-span-full py-16 text-center">
+              <p className="text-slate-500 italic text-sm">
+                No connected students found.
+              </p>
+            </div>
           )}
         </ul>
       </div>

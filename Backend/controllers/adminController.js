@@ -68,3 +68,18 @@ exports.rejectAlumni = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+// Delete any active User (Admin privilege)
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    // Ensure only Admin logic reaches here (handled via frontend/routes natively, but good measure)
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ msg: 'User successfully deleted.' });
+  } catch (err) {
+    console.error("Error in deleteUser:", err);
+    res.status(500).send('Server Error');
+  }
+};
