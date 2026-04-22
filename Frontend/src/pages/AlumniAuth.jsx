@@ -18,6 +18,19 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
     }
   };
 
+  const handleSendOtp = async () => {
+    if (!formData.email) {
+      alert("Please enter your email first.");
+      return;
+    }
+    try {
+      await API.post('/auth/send-otp', { email: formData.email });
+      alert("OTP sent! Please check your email inbox (and spam folder).");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to send OTP");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -98,7 +111,7 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
                 <div className="sm:col-span-2">
                   <div className="flex justify-between items-center">
                     <label className={`block text-sm/6 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>OTP Verification</label>
-                    <button type="button" onClick={() => alert('OTP Sent to your email')} className="text-[#5c4dff] text-xs font-semibold hover:underline">
+                    <button type="button" onClick={handleSendOtp} className="text-[#5c4dff] text-xs font-semibold hover:underline">
                       Send OTP
                     </button>
                   </div>

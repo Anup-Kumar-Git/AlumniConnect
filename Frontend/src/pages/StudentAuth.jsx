@@ -4,8 +4,21 @@ import API from '../services/api';
 
 const StudentAuth = ({ isDark, setIsDark }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', otp: '' });
   const navigate = useNavigate();
+
+  const handleSendOtp = async () => {
+    if (!formData.email) {
+      alert("Please enter your email first.");
+      return;
+    }
+    try {
+      await API.post('/auth/send-otp', { email: formData.email });
+      alert("OTP sent! Please check your email inbox (and spam folder).");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to send OTP");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,6 +67,19 @@ const StudentAuth = ({ isDark, setIsDark }) => {
             <input type="text" placeholder="Full Name" required className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
           )}
           <input type="email" placeholder="Email" required className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+          
+          {!isLogin && (
+            <div className={`w-full p-4 rounded-xl border ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus-within:border-[#5c4dff]`}>
+              <div className="flex justify-between items-center mb-2">
+                <label className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>OTP Verification</label>
+                <button type="button" onClick={handleSendOtp} className="text-[#5c4dff] text-xs font-semibold hover:underline">
+                  Send OTP
+                </button>
+              </div>
+              <input type="text" placeholder="6-digit OTP code" required className={`w-full bg-transparent outline-none ${isDark ? 'text-white placeholder:text-gray-500' : 'text-slate-900 placeholder:text-slate-400'}`} onChange={(e) => setFormData({ ...formData, otp: e.target.value })} />
+            </div>
+          )}
+
           <input type="password" placeholder="Password" required className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
 
           <button type="submit" className="w-full bg-[#5c4dff] text-white font-bold py-4 rounded-xl active:scale-95 transition-all">
