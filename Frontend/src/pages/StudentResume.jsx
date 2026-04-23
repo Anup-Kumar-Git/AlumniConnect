@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Upload, FileText, Trash2, Eye, FileUp, Sparkles, Briefcase, Award, ArrowRight } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const StudentResume = ({ isDark }) => {
   const [resume, setResume] = useState(null); // Will store base64 string

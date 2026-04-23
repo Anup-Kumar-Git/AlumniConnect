@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Home, Users, Calendar, FileText, User, LogOut, Menu, X, Search, Bell, ChevronDown, Settings, Sun, Moon, GraduationCap, UserCheck, MessageSquare, Clock } from 'lucide-react';
+import { Home, Users, Calendar, FileText, User, LogOut, Menu, X, Search, Bell, ChevronDown, Settings, Sun, Moon, GraduationCap, UserCheck, MessageSquare, Clock, Megaphone, ShieldAlert, UserPlus, BookOpen, Layers } from 'lucide-react';
 import { ThemeContext } from '../App';
 import NotificationsDropdown from './NotificationsDropdown';
 
@@ -30,13 +30,13 @@ const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }
 
   const menuItems = [
     { name: 'Dashboard', icon: <Home size={20} />, path: `/${role.toLowerCase()}-dashboard` },
-    { name: role === 'Alumni' ? "Pending Request" : 'Alumni List', icon: role === 'Alumni' ? <Users size={20} /> : <GraduationCap size={20} />, path: '/alumni-list' },
-    ...(role === 'Student' ? [{ name: 'Connections', icon: <Users size={20} />, path: '/student-connections' }] : []),
+    { name: role === 'Alumni' ? "Pending Request" : 'Alumni List', icon: role === 'Alumni' ? <UserPlus size={20} /> : <GraduationCap size={20} />, path: '/alumni-list' },
+    ...(role === 'Student' ? [{ name: 'Connections', icon: <UserCheck size={20} />, path: '/student-connections' }] : []),
     ...(role === 'Admin' ? [{ name: 'Student List', icon: <Users size={20} />, path: '/student-list' }] : []),
-    { name: role === 'Admin' ? 'Pending Approvals' : 'Booked Sessions', icon: <Calendar size={20} />, path: role === 'Admin' ? '/admin-approvals' : '/sessions' },
+    { name: role === 'Admin' ? 'Pending Approvals' : 'Booked Sessions', icon: role === 'Admin' ? <ShieldAlert size={20} /> : <Calendar size={20} />, path: role === 'Admin' ? '/admin-approvals' : '/sessions' },
     ...(role === 'Alumni' ? [{ name: 'Pending Sessions', icon: <Clock size={20} />, path: '/pending-sessions' }] : []),
-    { name: role === 'Admin' ? 'Announcements' : (role === 'Alumni' ? 'Connections' : 'Resume'), icon: role === 'Admin' ? <FileText size={20} /> : (role === 'Alumni' ? <UserCheck size={20} /> : <FileText size={20} />), path: role === 'Admin' ? '/admin-posts' : (role === 'Alumni' ? '/connected-students' : `/${role.toLowerCase()}-resume`) },
-    { name: 'My Posts', icon: <MessageSquare size={20} />, path: '/my-posts' },
+    { name: role === 'Admin' ? 'Announcements' : (role === 'Alumni' ? 'Connections' : 'Resume'), icon: role === 'Admin' ? <Megaphone size={20} /> : (role === 'Alumni' ? <Users size={20} /> : <FileText size={20} />), path: role === 'Admin' ? '/admin-posts' : (role === 'Alumni' ? '/connected-students' : `/${role.toLowerCase()}-resume`) },
+    { name: 'My Posts', icon: <Layers size={20} />, path: '/my-posts' },
     { name: 'Profile', icon: <User size={20} />, path: `/${role.toLowerCase()}-profile` },
   ];
 
@@ -104,14 +104,6 @@ const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }
 
         {/* Bottom Settings & Logout */}
         <div className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'} ${isSidebarOpen ? 'p-4' : 'p-3'}`}>
-          <button
-            title={!isSidebarOpen ? "Settings" : undefined}
-            className={`w-full flex items-center gap-3 py-2.5 rounded-lg transition-colors font-medium text-[15px] mb-1 ${isSidebarOpen ? 'px-3' : 'justify-center px-0'
-              } ${isDark ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-          >
-            <Settings size={20} className="opacity-80 shrink-0" />
-            {isSidebarOpen && <span>Settings</span>}
-          </button>
 
           <button
             onClick={handleLogout}
@@ -159,17 +151,24 @@ const DashboardLayout = ({ children, isDark, role, userName = "Abhishek Kumar" }
             {/* Divider */}
             <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
 
-            <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img
-                src={profilePicture || `https://ui-avatars.com/api/?name=${userName}&background=5c4dff&color=fff&bold=true`}
-                alt="Profile"
-                className={`w-8 h-8 rounded-full object-cover border ${isDark ? 'border-white/10' : 'border-slate-200'}`}
-              />
-              <span className={`hidden sm:block text-sm font-semibold tracking-tight ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                {userName.split(' ')[0]} {/* Show first name like "Tom" in design */}
-              </span>
-              <ChevronDown size={14} className={`hidden sm:block ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <img
+                  src={profilePicture || `https://ui-avatars.com/api/?name=${userName}&background=5c4dff&color=fff&bold=true`}
+                  alt="Profile"
+                  className={`w-9 h-9 rounded-full object-cover ring-2 ring-offset-2 transition-all shadow-sm ${isDark ? 'ring-indigo-500/50 ring-offset-[#15181e]' : 'ring-indigo-200 ring-offset-white'}`}
+                />
+                <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${isDark ? 'border-[#15181e]' : 'border-white'}`}></span>
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className={`text-sm font-bold tracking-tight leading-tight ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  {userName.split(' ')[0]}
+                </span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                  {role}
+                </span>
+              </div>
+            </div>
           </div>
         </header>
 

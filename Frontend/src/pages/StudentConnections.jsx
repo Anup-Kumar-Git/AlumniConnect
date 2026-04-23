@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import axios from 'axios';
 import { Briefcase, Award, Linkedin, Github, FileText, X, User, Calendar } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const StudentConnections = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
@@ -89,13 +95,18 @@ const StudentConnections = ({ isDark, setIsDark }) => {
                         )}
                       </div>
                     </div>
-                    {alumni.profilePicture ? (
-                      <img className={`h-20 w-20 flex-shrink-0 rounded-full object-cover shadow-md ${isDark ? 'bg-gray-800' : 'bg-gray-300'}`} src={alumni.profilePicture} alt={alumni.name} />
-                    ) : (
-                      <div className={`h-20 w-20 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-2xl text-white shadow-md ${isDark ? 'bg-indigo-600' : 'bg-indigo-500'}`}>
-                        {alumni.name ? alumni.name[0] : 'A'}
-                      </div>
-                    )}
+                    <div className="relative inline-block">
+                      {alumni.profilePicture ? (
+                        <img className={`h-20 w-20 flex-shrink-0 rounded-full object-cover shadow-md ${isDark ? 'bg-gray-800' : 'bg-gray-300'}`} src={alumni.profilePicture} alt={alumni.name} />
+                      ) : (
+                        <div className={`h-20 w-20 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-2xl text-white shadow-md ${isDark ? 'bg-indigo-600' : 'bg-indigo-500'}`}>
+                          {alumni.name ? alumni.name[0] : 'A'}
+                        </div>
+                      )}
+                      {isOnline(alumni.lastActive) && (
+                        <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white dark:border-[#151a25] rounded-full shadow-sm"></span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <div className={`-mt-px flex divide-x ${isDark ? 'divide-white/5' : 'divide-gray-200'}`}>
@@ -117,13 +128,13 @@ const StudentConnections = ({ isDark, setIsDark }) => {
                               const res = await axios.post('http://localhost:5000/api/session-requests', { alumniId: alumni._id }, {
                                 headers: { 'x-auth-token': token }
                               });
-                              alert(res.data.msg);
+                              toast.success(res.data.msg);
                               setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
                             } catch (err) {
                               if (err.response?.data?.msg === 'You already requested a session with this Alumni') {
                                 setRequestedAlumni(prev => ({ ...prev, [alumni._id]: true }));
                               }
-                              alert(err.response?.data?.msg || 'Failed to request session');
+                              toast.error(err.response?.data?.msg || 'Failed to request session');
                             }
                           }}
                           disabled={requestedAlumni[alumni._id]}

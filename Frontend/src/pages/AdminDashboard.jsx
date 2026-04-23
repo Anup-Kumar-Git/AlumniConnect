@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Users, ShieldAlert, Activity } from 'lucide-react';
+import { Users, ShieldAlert, Activity, Loader2 } from 'lucide-react';
 import API from '../services/api';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const AdminDashboard = ({ isDark, setIsDark }) => {
   // FEATURE: Initialized with empty arrays to prevent .map() errors
@@ -11,50 +17,85 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
     pendingAlumni: [],
     alumniList: []
   });
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [rejectionTarget, setRejectionTarget] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const userName = localStorage.getItem('userName') || 'Admin';
 
-  async function fetchAdminData() {
+  const observer = useRef();
+  const lastElementRef = useCallback(node => {
+    if (loading || isFetchingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, isFetchingMore, hasMore]);
+
+  async function fetchAdminData(pageNum = 1) {
     try {
-      const res = await API.get('/admin/stats');
-      setData(res.data);
+      if (pageNum === 1) setLoading(true);
+      else setIsFetchingMore(true);
+
+      const res = await API.get(`/admin/stats?type=dashboard&page=${pageNum}&limit=12`);
+      setData(prev => {
+        if (pageNum === 1) return res.data;
+        return {
+          ...res.data,
+          pendingAlumni: [...prev.pendingAlumni, ...(res.data.pendingAlumni || [])]
+        };
+      });
+      setHasMore(res.data.hasMore);
     } catch (err) {
       console.error("Failed to fetch real-time stats", err);
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchAdminData();
-  }, []);
+    fetchAdminData(page);
+  }, [page]);
 
   const handleVerify = async (id) => {
     try {
       // Logic: Approve user and immediately refresh the dashboard lists
       await API.put(`/admin/verify/${id}`);
-      fetchAdminData(); 
+      setPage(1);
+      fetchAdminData(1); 
+      toast.success("User approved successfully!");
     } catch (err) {
-      alert(err.response?.data?.msg || "Verification failed");
+      toast.error(err.response?.data?.msg || "Verification failed");
     }
   };
 
   const executeRejectionAndMail = async () => {
     if (!rejectionTarget) return;
+    setIsSending(true);
     try {
-      await API.delete(`/admin/reject/${rejectionTarget._id}`);
+      await API.delete(`/admin/reject/${rejectionTarget._id}`, {
+        data: { reason: rejectionReason }
+      });
       
-      const subject = encodeURIComponent("Update on AlumniConnect Registration");
-      const body = encodeURIComponent(`Dear ${rejectionTarget.name},\n\nYour recent registration request for AlumniConnect could not be approved.\n\nReason:\n${rejectionReason}\n\nBest Regards,\nAdmin Team`);
-      window.location.href = `mailto:${rejectionTarget.email}?subject=${subject}&body=${body}`;
-
       setRejectionTarget(null);
       setRejectionReason("");
-      fetchAdminData(); 
+      setPage(1);
+      fetchAdminData(1); 
+      toast.success("Rejection email sent and user removed!");
     } catch (err) {
-      alert(err.response?.data?.msg || "Rejection failed");
+      toast.error(err.response?.data?.msg || "Rejection failed");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -70,6 +111,17 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
   ];
 
   const location = useLocation();
+
+  if (loading) {
+    return (
+      <DashboardLayout isDark={isDark} role="Admin" userName={userName}>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <Loader2 className="animate-spin text-[#5c4dff] mb-4" size={48} />
+          <p className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading Data...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout isDark={isDark} role="Admin" userName={userName}>
@@ -114,13 +166,24 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
           <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Pending Approvals</h3>
           <div className="space-y-4">
             {data.pendingAlumni && data.pendingAlumni.length > 0 ? (
-              data.pendingAlumni.map((alumni) => (
-                <div key={alumni._id} className={`p-5 rounded-2xl flex items-center justify-between transition-all ${
+              data.pendingAlumni.map((alumni, index) => {
+                const isLastElement = data.pendingAlumni.length === index + 1;
+                return (
+                <div ref={isLastElement ? lastElementRef : null} key={alumni._id} className={`p-5 rounded-2xl flex items-center justify-between transition-all ${
                   isDark ? 'bg-white/5 border-transparent hover:bg-white/[0.08]' : 'bg-slate-50 border-slate-100'
                 }`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white font-black">
-                      {alumni.name ? alumni.name[0] : 'A'}
+                    <div className="relative inline-block">
+                      {alumni.profilePicture ? (
+                        <img className="w-12 h-12 rounded-full object-cover" src={alumni.profilePicture} alt={alumni.name} />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white font-black">
+                          {alumni.name ? alumni.name[0] : 'A'}
+                        </div>
+                      )}
+                      {isOnline(alumni.lastActive) && (
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
+                      )}
                     </div>
                     <div>
                       <p className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{alumni.name}</p>
@@ -148,11 +211,16 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
                     </button>
                   </div>
                 </div>
-              ))
+              )})
             ) : (
               <p className="text-slate-500 italic text-sm text-center py-4">No pending alumni requests.</p>
             )}
           </div>
+          {isFetchingMore && (
+            <div className="flex justify-center mt-6">
+              <Loader2 className="animate-spin text-[#5c4dff]" size={24} />
+            </div>
+          )}
         </div>
       )}
 
@@ -242,9 +310,17 @@ const AdminDashboard = ({ isDark, setIsDark }) => {
               </button>
               <button 
                 onClick={executeRejectionAndMail}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2"
+                disabled={isSending}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Email & Reject
+                {isSending ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Email & Reject"
+                )}
               </button>
             </div>
           </div>

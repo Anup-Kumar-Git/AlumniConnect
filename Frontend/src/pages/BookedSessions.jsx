@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import axios from 'axios';
 import { Calendar, Clock, Video, Eye, X, Book, FileText, Linkedin, Github } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const BookedSessions = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
@@ -51,7 +57,7 @@ const BookedSessions = ({ isDark, setIsDark }) => {
       window.open(url, '_blank');
     } catch (err) {
       console.error('Failed to create object URL for resume', err);
-      alert('Unable to load resume');
+      toast.error('Unable to load resume');
     }
   };
 
@@ -78,13 +84,18 @@ const BookedSessions = ({ isDark, setIsDark }) => {
               return (
                 <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
                   <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={() => setSelectedUser(displayData)}>
-                    {displayData.profilePicture ? (
-                      <img className="h-16 w-16 rounded-full object-cover shadow-md" src={displayData.profilePicture} alt={displayData.name} />
-                    ) : (
-                      <div className="h-16 w-16 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-2xl shadow-inner">
-                        {displayData.name ? displayData.name[0] : 'U'}
-                      </div>
-                    )}
+                    <div className="relative inline-block">
+                      {displayData.profilePicture ? (
+                        <img className="h-16 w-16 rounded-full object-cover shadow-md" src={displayData.profilePicture} alt={displayData.name} />
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-2xl shadow-inner">
+                          {displayData.name ? displayData.name[0] : 'U'}
+                        </div>
+                      )}
+                      {isOnline(displayData.lastActive) && (
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
+                      )}
+                    </div>
                     <div>
                       <h3 className={`text-lg font-bold tracking-tight hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                         {displayData.name}

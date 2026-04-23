@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { Send, Megaphone, Image as ImageIcon, X, Edit2 } from 'lucide-react';
 import axios from 'axios';
 import PostCard from '../components/PostCard';
+import { toast } from 'react-hot-toast';
 
 const AdminPosts = ({ isDark }) => {
   const [posts, setPosts] = useState([]);
@@ -30,17 +31,28 @@ const AdminPosts = ({ isDark }) => {
 
 
   const handleDeletePost = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/posts/${id}`, {
-        headers: { 'x-auth-token': token }
-      });
-      setPosts(posts.filter(p => p._id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    toast((t) => (
+      <div>
+        <p className="font-bold mb-3">Are you sure you want to delete this announcement?</p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-sm bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition-colors">Cancel</button>
+          <button onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              const token = localStorage.getItem('token');
+              await axios.delete(`http://localhost:5000/api/admin/posts/${id}`, {
+                headers: { 'x-auth-token': token }
+              });
+              fetchPosts();
+              toast.success("Post deleted successfully!");
+            } catch (err) {
+              console.error(err);
+              toast.error("Failed to delete post");
+            }
+          }} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">Delete</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   return (

@@ -21,7 +21,8 @@ const UserSchema = new mongoose.Schema({
   instituteName: { type: String },
   degree: { type: String },
   session: { type: String },
-  department: { type: String }
+  department: { type: String },
+  lastActive: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('User', UserSchema);

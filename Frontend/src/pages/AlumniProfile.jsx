@@ -7,7 +7,7 @@ const AlumniProfile = ({ isDark }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    name: '', email: '', contactNo: '', academicYear: '', domain: '', expertise: '', experience: '', company: '', linkedin: '', github: '', otherDetails: '', profilePicture: ''
+    name: '', email: '', contactNo: '', academicYear: '', domain: '', expertise: '', experience: '', company: '', linkedin: '', github: '', otherDetails: '', profilePicture: '', instituteName: '', department: '', degree: '', session: ''
   });
 
   const [editForm, setEditForm] = useState(profile);
@@ -165,12 +165,21 @@ const AlumniProfile = ({ isDark }) => {
               <ProfileField icon={<Mail size={20} />} label="Email" name="email" value={profile.email} isEditing={false} onChange={handleEditChange} isDark={isDark} />
               <ProfileField icon={<Phone size={20} />} label="Contact No." name="contactNo" value={isEditing ? editForm.contactNo : profile.contactNo} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="+1 (555) 000-0000" />
               
-              <ProfileField icon={<Calendar size={20} />} label="Academic Year" name="academicYear" value={isEditing ? editForm.academicYear : profile.academicYear} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 2018 - 2022" />
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/10 pt-6 mt-2">
+                <ProfileField icon={<Building size={20} />} label="Institute Name" name="instituteName" value={isEditing ? editForm.instituteName : profile.instituteName} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. University of Example" />
+                <ProfileField icon={<Award size={20} />} label="Department" name="department" value={isEditing ? editForm.department : profile.department} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. Computer Science" />
+                <ProfileField icon={<FileText size={20} />} label="Degree/Program" name="degree" value={isEditing ? editForm.degree : profile.degree} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. B.Tech" />
+                <ProfileField icon={<Calendar size={20} />} label="Session" name="session" value={isEditing ? editForm.session : profile.session} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 2018 - 2022" />
+              </div>
+
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/10 pt-6 mt-2">
+                <ProfileField icon={<Calendar size={20} />} label="Academic Year" name="academicYear" value={isEditing ? editForm.academicYear : profile.academicYear} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 2nd Year" />
               <ProfileField icon={<Briefcase size={20} />} label="Specific Domain" name="domain" value={isEditing ? editForm.domain : profile.domain} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. Computer Science" />
               <ProfileField icon={<Star size={20} />} label="Expertise / Skills" name="expertise" value={isEditing ? editForm.expertise : profile.expertise} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="React, Node.js, Cloud..." />
               
               <ProfileField icon={<Building size={20} />} label="Company Name" name="company" value={isEditing ? editForm.company : profile.company} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. Google, Startup Inc." />
               <ProfileField icon={<Award size={20} />} label="Years of Exp." name="experience" value={isEditing ? editForm.experience : profile.experience} isEditing={isEditing} onChange={handleEditChange} isDark={isDark} placeholder="e.g. 5 Years" />
+              </div>
               
               {/* Ensure layout clears columns for links */}
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/10 pt-6 mt-2">

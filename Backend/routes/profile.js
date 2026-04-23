@@ -15,4 +15,9 @@ router.put('/', auth, profileController.updateProfile);
 // @access  Private
 router.get('/recommendations', auth, resumeMatcherController.getRecommendations);
 
+// @route   GET /api/profile/user/:id
+// @desc    Get another user's profile by ID
+// @access  Private
+router.get('/user/:id', auth, profileController.getUserProfileById);
+
 module.exports = router;

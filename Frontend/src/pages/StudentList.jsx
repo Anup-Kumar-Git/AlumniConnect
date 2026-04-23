@@ -1,49 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import API from '../services/api';
 import axios from 'axios';
-import { Eye, Briefcase, Award, Linkedin, Github, FileText, Clock, X, Book } from 'lucide-react';
+import { Eye, Briefcase, Award, Linkedin, Github, FileText, Clock, X, Book, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const StudentList = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [deletionTarget, setDeletionTarget] = useState(null);
   const [deletionReason, setDeletionReason] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const role = localStorage.getItem('role') || 'Admin';
   const userName = localStorage.getItem('userName') || role;
 
-  const fetchData = async () => {
+  const observer = useRef();
+  const lastElementRef = useCallback(node => {
+    if (loading || isFetchingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, isFetchingMore, hasMore]);
+
+  const fetchData = async (pageNum) => {
     try {
-      const res = await API.get('/admin/stats');
-      setDataList(res.data.studentList || []);
+      if (pageNum === 1) setLoading(true);
+      else setIsFetchingMore(true);
+
+      const res = await API.get(`/admin/stats?type=students&page=${pageNum}&limit=12`);
+      
+      setDataList(prev => pageNum === 1 ? (res.data.studentList || []) : [...prev, ...(res.data.studentList || [])]);
+      setHasMore(res.data.hasMore);
     } catch (err) {
       console.error("Failed to fetch data", err);
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(page);
+  }, [page]);
 
   const executeDeletionAndMail = async () => {
     if (!deletionTarget) return;
+    setIsSending(true);
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:5000/api/admin/${deletionTarget._id}`, {
-        headers: { 'x-auth-token': token }
+        headers: { 'x-auth-token': token },
+        data: { reason: deletionReason }
       });
       
-      // Trigger mailto link natively
-      const subject = encodeURIComponent("Notice of Account Deletion");
-      const body = encodeURIComponent(`Dear ${deletionTarget.name},\n\nYour account has been deleted from AlumniConnect.\n\nReason:\n${deletionReason}\n\nBest Regards,\nAdmin Team`);
-      window.location.href = `mailto:${deletionTarget.email}?subject=${subject}&body=${body}`;
-
       setDeletionTarget(null);
       setDeletionReason("");
-      fetchData(); // refresh list
+      // Reset list to page 1 and fetch again
+      setPage(1);
+      fetchData(1); // refresh list
+      toast.success("Deletion email sent and user removed!");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.msg || "Failed to delete user");
+      toast.error(err.response?.data?.msg || "Failed to delete user");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -66,12 +99,23 @@ const StudentList = ({ isDark, setIsDark }) => {
       window.open(url, '_blank');
     } catch (err) {
       console.error('Failed to create object URL for resume', err);
-      alert('Unable to load resume');
+      toast.error('Unable to load resume');
     }
   };
 
   if (role !== 'Admin') {
     return <DashboardLayout isDark={isDark} role={role} userName={userName}><div className="p-8 text-red-500 font-bold text-xl">Access Denied</div></DashboardLayout>;
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout isDark={isDark} role={role} userName={userName}>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <Loader2 className="animate-spin text-[#5c4dff] mb-4" size={48} />
+          <p className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading Student Data...</p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -88,39 +132,47 @@ const StudentList = ({ isDark, setIsDark }) => {
       <div className="py-8">
         <ul role="list" className="mx-auto grid grid-cols-2 gap-x-8 gap-y-16 text-center sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {dataList && dataList.length > 0 ? (
-            dataList.map((student) => (
-              <li key={student._id} className={`flex flex-col p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
-                {student.profilePicture ? (
-                  <img className="mx-auto h-24 w-24 rounded-full object-cover" src={student.profilePicture} alt={student.name} />
-                ) : (
-                  <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
-                    {student.name ? student.name[0] : 'S'}
+            dataList.map((student, index) => {
+              const isLastElement = dataList.length === index + 1;
+              return (
+                <li ref={isLastElement ? lastElementRef : null} key={student._id} className={`flex flex-col p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
+                  <div className="relative inline-block mx-auto">
+                    {student.profilePicture ? (
+                      <img className="h-24 w-24 rounded-full object-cover" src={student.profilePicture} alt={student.name} />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
+                        {student.name ? student.name[0] : 'S'}
+                      </div>
+                    )}
+                    {isOnline(student.lastActive) && (
+                      <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
+                    )}
                   </div>
-                )}
-                
-                <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
-                <p className="text-sm leading-6 text-slate-500">{student.academicYear ? `Year: ${student.academicYear}` : 'Student'}</p>
+                  
+                  <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
+                  <p className="text-sm leading-6 text-slate-500">{student.academicYear ? `Year: ${student.academicYear}` : 'Student'}</p>
 
-                <div className={`mt-2 text-xs truncate mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={student.email}>
-                  {student.email}
-                </div>
+                  <div className={`mt-2 text-xs truncate mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={student.email}>
+                    {student.email}
+                  </div>
 
-                <div className="mt-4 flex flex-col items-center justify-center gap-2">
-                  <button
-                    onClick={() => setSelectedStudent(student)}
-                    className={`text-xs font-bold hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
-                  >
-                    View Profile
-                  </button>
-                  <button
-                    onClick={() => setDeletionTarget(student)}
-                    className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))
+                  <div className="mt-4 flex flex-col items-center justify-center gap-2">
+                    <button
+                      onClick={() => setSelectedStudent(student)}
+                      className={`text-xs font-bold hover:underline ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      onClick={() => setDeletionTarget(student)}
+                      className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              );
+            })
           ) : (
             <div className="col-span-full py-16 text-center">
               <p className="text-slate-500 italic text-sm">
@@ -129,6 +181,11 @@ const StudentList = ({ isDark, setIsDark }) => {
             </div>
           )}
         </ul>
+        {isFetchingMore && (
+          <div className="flex justify-center mt-8">
+            <Loader2 className="animate-spin text-[#5c4dff]" size={32} />
+          </div>
+        )}
       </div>
 
       {/* Profile Modal Overlay */}
@@ -250,9 +307,17 @@ const StudentList = ({ isDark, setIsDark }) => {
               </button>
               <button 
                 onClick={executeDeletionAndMail}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2"
+                disabled={isSending}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Email & Delete
+                {isSending ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Email & Delete"
+                )}
               </button>
             </div>
           </div>

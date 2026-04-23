@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import API from '../services/api';
 
 const AdminAuth = ({ isDark, setIsDark }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({ show: false, msg: '', type: '' });
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsAuthLoading(true);
+    setAlertInfo({ show: false, msg: '', type: '' });
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      
-      // FEATURE: loginType tells backend to verify the user role is 'Admin'
-      const payload = isLogin 
-        ? { email: formData.email, password: formData.password, loginType: 'Admin' } 
-        : { ...formData, role: 'Admin' };
-
-      const res = await API.post(endpoint, payload);
+      const payload = { email: formData.email, password: formData.password, loginType: 'Admin' };
+      const res = await API.post('/auth/login', payload);
       
       // FEATURE: Save the name you put at registration for the dashboard
       localStorage.setItem('token', res.data.token);
@@ -31,7 +29,9 @@ const AdminAuth = ({ isDark, setIsDark }) => {
       
       navigate('/admin-dashboard'); 
     } catch (err) {
-      alert(err.response?.data?.msg || "Authentication Failed");
+      setAlertInfo({ show: true, msg: err.response?.data?.msg || "Authentication Failed", type: 'error' });
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
@@ -56,19 +56,17 @@ const AdminAuth = ({ isDark, setIsDark }) => {
       <div className={`w-full max-w-md p-10 rounded-[2.5rem] border transition-all ${
         isDark ? 'bg-[#0f0f12] border-white/5 shadow-2xl' : 'bg-white border-slate-100 shadow-2xl'
       }`}>
-        <h2 className="text-3xl font-black text-center mb-2">Admin {isLogin ? 'Login' : 'Registration'}</h2>
-        <p className="text-center text-slate-500 mb-8 text-sm">{isLogin ? 'Enter Credentials' : 'Create Account'}</p>
+        <h2 className="text-3xl font-black text-center mb-2">Admin Login</h2>
+        <p className="text-center text-slate-500 mb-8 text-sm">Enter Credentials</p>
+
+        {alertInfo.show && (
+          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-4 duration-300 ${alertInfo.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+            {alertInfo.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+            <p>{alertInfo.msg}</p>
+          </div>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {!isLogin && (
-            <input 
-              type="text" 
-              placeholder="Full Name" 
-              required 
-              className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} 
-              onChange={(e) => setFormData({...formData, name: e.target.value})} 
-            />
-          )}
           <input 
             type="email" 
             placeholder="Email" 
@@ -84,16 +82,10 @@ const AdminAuth = ({ isDark, setIsDark }) => {
             onChange={(e) => setFormData({...formData, password: e.target.value})} 
           />
           
-          <button type="submit" className="w-full bg-[#5c4dff] text-white font-bold py-4 rounded-xl active:scale-95 transition-all">
-            {isLogin ? 'Login' : 'Register'}
+          <button type="submit" disabled={isAuthLoading} className="w-full flex items-center justify-center gap-2 bg-[#5c4dff] text-white font-bold py-4 rounded-xl active:scale-95 transition-all disabled:opacity-70 disabled:active:scale-100">
+            {isAuthLoading ? <><Loader2 className="w-5 h-5 animate-spin"/> Processing...</> : 'Login'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-sm font-medium text-[#5c4dff] hover:underline">
-            {isLogin ? "Need an admin account? Register here" : "Already have an account? Login"}
-          </button>
-        </div>
       </div>
     </div>
   );

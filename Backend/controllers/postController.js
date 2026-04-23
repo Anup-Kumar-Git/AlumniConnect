@@ -34,12 +34,18 @@ exports.getPosts = async (req, res) => {
     // Attach profile pictures to posts
     if (posts.length > 0) {
       const authorIds = [...new Set(posts.map(p => p.author.toString()))];
-      const authors = await User.find({ _id: { $in: authorIds } }).select('profilePicture');
+      const authors = await User.find({ _id: { $in: authorIds } }).select('profilePicture role');
       const authorMap = {};
-      authors.forEach(a => authorMap[a._id.toString()] = a.profilePicture);
+      authors.forEach(a => {
+        authorMap[a._id.toString()] = { 
+          profilePicture: a.profilePicture, 
+          role: a.role 
+        };
+      });
 
       posts.forEach(p => {
-         p.authorProfilePicture = authorMap[p.author.toString()] || null;
+         p.authorProfilePicture = authorMap[p.author.toString()]?.profilePicture || null;
+         p.authorRole = authorMap[p.author.toString()]?.role || 'Alumni Connect Member';
       });
     }
 
@@ -113,6 +119,37 @@ exports.deletePost = async (req, res) => {
   }
 };
 
+// @route   PUT /api/posts/:id
+// @desc    Update a post
+// @access  Private (Author only)
+exports.updatePost = async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+
+    // Checking if requester is Post Author
+    if (post.author.toString() !== req.user.id.toString()) {
+      return res.status(401).json({ msg: 'Not authorized to edit this post.' });
+    }
+
+    if (title !== undefined) post.title = title;
+    if (content !== undefined) post.content = content;
+
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+};
+
 // @route   PUT /api/posts/like/:id
 // @desc    Like or Unlike a post
 // @access  Private
@@ -120,16 +157,20 @@ exports.likePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     
+    if (!post) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+
     // Check if the post has already been liked by this user
-    if (post.likes.filter(like => like.user.toString() === req.user.id).length > 0) {
+    if (post.likes.filter(like => like.user && like.user.toString() === req.user.id).length > 0) {
       // Get remove index
-      const removeIndex = post.likes.map(like => like.user.toString()).indexOf(req.user.id);
+      const removeIndex = post.likes.map(like => like.user ? like.user.toString() : '').indexOf(req.user.id);
       post.likes.splice(removeIndex, 1);
     } else {
       post.likes.unshift({ user: req.user.id });
 
       // Notify post author if not liking own post
-      if (post.author.toString() !== req.user.id.toString()) {
+      if (post.author && post.author.toString() !== req.user.id.toString()) {
         const liker = await User.findById(req.user.id);
         await Notification.create({
           recipient: post.author,
@@ -167,7 +208,7 @@ exports.addComment = async (req, res) => {
     await post.save();
 
     // Notify post author if not commenting on own post
-    if (post.author.toString() !== req.user.id.toString()) {
+    if (post.author && post.author.toString() !== req.user.id.toString()) {
       await Notification.create({
         recipient: post.author,
         sender: req.user.id,
@@ -217,6 +258,32 @@ exports.deleteComment = async (req, res) => {
     res.json(post.comments);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @route   GET /api/posts/user/:id
+// @desc    Get all posts by a specific user
+// @access  Private
+exports.getPostsByUserId = async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.params.id }).sort({ createdAt: -1 }).lean();
+
+    // Attach profile pictures to posts
+    if (posts.length > 0) {
+      const author = await User.findById(req.params.id).select('profilePicture role');
+      posts.forEach(p => {
+         p.authorProfilePicture = author ? author.profilePicture : null;
+         p.authorRole = author ? author.role : 'Alumni Connect Member';
+      });
+    }
+
+    res.json(posts);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
     res.status(500).send('Server Error');
   }
 };

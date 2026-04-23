@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import axios from 'axios';
 import { CheckCircle, XCircle, Eye, X, Book, FileText, Linkedin, Github } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const PendingSessions = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
@@ -41,9 +47,10 @@ const PendingSessions = ({ isDark, setIsDark }) => {
         headers: { 'x-auth-token': token }
       });
       fetchData(); // Refresh list to reflect updated status
+      toast.success("Request rejected!");
     } catch (err) {
       console.error(err);
-      alert("Failed to update session request");
+      toast.error("Failed to update session request");
     } finally {
       setLoadingAction(null);
     }
@@ -63,9 +70,10 @@ const PendingSessions = ({ isDark, setIsDark }) => {
       fetchData();
       setAcceptingRequest(null);
       setBookingData({ date: '', time: '', meetLink: '' });
+      toast.success("Request accepted! A Google Meet link has been generated.");
     } catch (err) {
       console.error(err);
-      alert("Failed to accept session request");
+      toast.error("Failed to accept session request");
     } finally {
       setLoadingAction(null);
     }
@@ -90,7 +98,7 @@ const PendingSessions = ({ isDark, setIsDark }) => {
       window.open(url, '_blank');
     } catch (err) {
       console.error('Failed to create object URL for resume', err);
-      alert('Unable to load resume');
+      toast.error('Unable to load resume');
     }
   };
 
@@ -116,13 +124,18 @@ const PendingSessions = ({ isDark, setIsDark }) => {
 
               return (
                 <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
-                  {displayData.profilePicture ? (
-                    <img className="mx-auto h-24 w-24 rounded-full object-cover" src={displayData.profilePicture} alt={displayData.name} />
-                  ) : (
-                    <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
-                      {displayData.name ? displayData.name[0] : 'S'}
-                    </div>
-                  )}
+                  <div className="relative inline-block mx-auto">
+                    {displayData.profilePicture ? (
+                      <img className="h-24 w-24 rounded-full object-cover" src={displayData.profilePicture} alt={displayData.name} />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
+                        {displayData.name ? displayData.name[0] : 'S'}
+                      </div>
+                    )}
+                    {isOnline(displayData.lastActive) && (
+                      <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
+                    )}
+                  </div>
                   <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight hover:underline cursor-pointer ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-800'}`} onClick={() => setSelectedStudent(displayData)}>{displayData.name}</h3>
                   <p className="text-sm leading-6 text-slate-500">{displayData.domain || 'Student'}</p>
 

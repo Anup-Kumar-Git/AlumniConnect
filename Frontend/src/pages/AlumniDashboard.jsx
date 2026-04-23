@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { Users, Calendar, Clock, Megaphone, User, Edit2, Image as ImageIcon, X, Send, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import PostCard from '../components/PostCard';
+import { toast } from 'react-hot-toast';
 
 const AlumniDashboard = ({ isDark, setIsDark }) => {
   const userName = localStorage.getItem('userName') || 'Mentor';
@@ -43,19 +44,41 @@ const AlumniDashboard = ({ isDark, setIsDark }) => {
     fetchStats();
   }, []);
 
-
-
-  const handleDeletePost = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
+  const fetchAnnouncements = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/posts/${id}`, {
+      const res = await axios.get('http://localhost:5000/api/posts', {
         headers: { 'x-auth-token': token }
       });
-      setPosts(posts.filter(p => p._id !== id));
+      setPosts(res.data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch posts', err);
     }
+  };
+
+  const handleDeletePost = async (id) => {
+    toast((t) => (
+      <div>
+        <p className="font-bold mb-3">Are you sure you want to delete this announcement?</p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-sm bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition-colors">Cancel</button>
+          <button onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              const token = localStorage.getItem('token');
+              await axios.delete(`http://localhost:5000/api/posts/${id}`, {
+                headers: { 'x-auth-token': token }
+              });
+              fetchAnnouncements();
+              toast.success("Announcement deleted successfully!");
+            } catch (err) {
+              console.error(err);
+              toast.error("Failed to delete announcement");
+            }
+          }} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">Delete</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const stats = [

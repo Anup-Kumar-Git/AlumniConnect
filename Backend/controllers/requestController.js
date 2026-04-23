@@ -49,12 +49,23 @@ exports.createRequest = async (req, res) => {
 exports.getAlumniRequests = async (req, res) => {
   try {
     const alumniId = req.user.id;
-    // Fetch pending requests for this alumni, populate student details
-    const requests = await Request.find({ alumni: alumniId })
-      .populate('student', 'name email domain profilePicture resume')
-      .sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
 
-    res.json({ requests });
+    // Fetch pending requests for this alumni, populate student details
+    const [requests, total] = await Promise.all([
+      Request.find({ alumni: alumniId, status: 'Pending' })
+        .populate('student', 'name email domain profilePicture resume')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Request.countDocuments({ alumni: alumniId, status: 'Pending' })
+    ]);
+
+    const hasMore = skip + requests.length < total;
+
+    res.json({ requests, hasMore });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -145,12 +156,23 @@ exports.getDashboardStats = async (req, res) => {
 exports.getStudentConnections = async (req, res) => {
   try {
     const studentId = req.user.id;
-    // Fetch accepted requests for this student, populate alumni details
-    const requests = await Request.find({ student: studentId, status: 'Accepted' })
-      .populate('alumni', 'name email domain expertise company profilePicture linkedin github')
-      .sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
 
-    res.json({ connections: requests });
+    // Fetch accepted requests for this student, populate alumni details
+    const [requests, total] = await Promise.all([
+      Request.find({ student: studentId, status: 'Accepted' })
+        .populate('alumni', 'name email domain expertise company profilePicture linkedin github')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Request.countDocuments({ student: studentId, status: 'Accepted' })
+    ]);
+
+    const hasMore = skip + requests.length < total;
+
+    res.json({ connections: requests, hasMore });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import API from '../services/api';
 
 const AlumniAuth = ({ isDark, setIsDark }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', instituteName: '', degree: '', session: '', department: '', otp: '', profilePicture: '' });
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({ show: false, msg: '', type: '' });
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -20,19 +24,25 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
 
   const handleSendOtp = async () => {
     if (!formData.email) {
-      alert("Please enter your email first.");
+      setAlertInfo({ show: true, msg: "Please enter your email first.", type: 'error' });
       return;
     }
+    setIsOtpLoading(true);
+    setAlertInfo({ show: false, msg: '', type: '' });
     try {
       await API.post('/auth/send-otp', { email: formData.email });
-      alert("OTP sent! Please check your email inbox (and spam folder).");
+      setAlertInfo({ show: true, msg: "OTP sent! Please check your email inbox (and spam folder).", type: 'success' });
     } catch (err) {
-      alert(err.response?.data?.msg || "Failed to send OTP");
+      setAlertInfo({ show: true, msg: err.response?.data?.msg || "Failed to send OTP", type: 'error' });
+    } finally {
+      setIsOtpLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsAuthLoading(true);
+    setAlertInfo({ show: false, msg: '', type: '' });
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
 
@@ -44,8 +54,7 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
       const res = await API.post(endpoint, payload);
 
       if (!isLogin) {
-        // Registration successful but needs approval
-        alert(res.data.msg || "Registration successful! Please wait for Admin approval before logging in.");
+        setAlertInfo({ show: true, msg: res.data.msg || "Registration successful! Please wait for Admin approval before logging in.", type: 'success' });
         setIsLogin(true); // Switch to login form
       } else {
         // Login successful
@@ -60,7 +69,9 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
         navigate('/alumni-dashboard');
       }
     } catch (err) {
-      alert(err.response?.data?.msg || "Authentication Failed");
+      setAlertInfo({ show: true, msg: err.response?.data?.msg || "Authentication Failed", type: 'error' });
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
@@ -77,6 +88,13 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
         }`}>
         <h2 className="text-3xl font-black text-center mb-2">Alumni {isLogin ? 'Login' : 'Registration'}</h2>
         <p className="text-center text-slate-500 mb-8 text-sm">{isLogin ? 'Enter Credentials' : 'Create Account'}</p>
+
+        {alertInfo.show && (
+          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-4 duration-300 ${alertInfo.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+            {alertInfo.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+            <p>{alertInfo.msg}</p>
+          </div>
+        )}
 
         <form className={!isLogin ? "" : "space-y-4"} onSubmit={handleSubmit}>
           {!isLogin ? (
@@ -111,8 +129,8 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
                 <div className="sm:col-span-2">
                   <div className="flex justify-between items-center">
                     <label className={`block text-sm/6 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>OTP Verification</label>
-                    <button type="button" onClick={handleSendOtp} className="text-[#5c4dff] text-xs font-semibold hover:underline">
-                      Send OTP
+                    <button type="button" onClick={handleSendOtp} disabled={isOtpLoading} className="text-[#5c4dff] text-xs font-semibold hover:underline flex items-center gap-1 disabled:opacity-50">
+                      {isOtpLoading ? <><Loader2 className="w-3 h-3 animate-spin"/> Sending...</> : 'Send OTP'}
                     </button>
                   </div>
                   <div className="mt-2">
@@ -188,7 +206,9 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
                   
                   <div className="flex gap-x-6 items-center pb-2">
                     <button type="button" onClick={() => setIsLogin(true)} className={`text-sm/6 font-semibold ${isDark ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-600'}`}>Cancel</button>
-                    <button type="submit" className="rounded-md bg-[#5c4dff] px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#4b3ce5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5c4dff]">Submit</button>
+                    <button type="submit" disabled={isAuthLoading} className="flex items-center gap-2 rounded-md bg-[#5c4dff] px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#4b3ce5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5c4dff] disabled:opacity-70 disabled:hover:bg-[#5c4dff]">
+                      {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin"/>} Submit
+                    </button>
                   </div>
                 </div>
 
@@ -199,8 +219,8 @@ const AlumniAuth = ({ isDark, setIsDark }) => {
               <input type="email" placeholder="Email" required className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
               <input type="password" placeholder="Password" required className={`w-full p-4 rounded-xl border outline-none ${isDark ? 'bg-white/5 border-transparent' : 'bg-slate-50 border-slate-200'} focus:border-[#5c4dff]`} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
 
-              <button type="submit" className="w-full bg-[#5c4dff] text-white font-bold py-4 rounded-xl active:scale-95 transition-all">
-                Login
+              <button type="submit" disabled={isAuthLoading} className="w-full flex items-center justify-center gap-2 bg-[#5c4dff] text-white font-bold py-4 rounded-xl active:scale-95 transition-all disabled:opacity-70 disabled:active:scale-100">
+                {isAuthLoading ? <><Loader2 className="w-5 h-5 animate-spin"/> Processing...</> : 'Login'}
               </button>
               <div className="mt-6 text-center">
                 <button type="button" onClick={() => setIsLogin(false)} className="text-sm font-medium text-[#5c4dff] hover:underline">

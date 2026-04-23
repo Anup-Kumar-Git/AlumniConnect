@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import axios from 'axios';
 import { Eye, Briefcase, Award, Linkedin, Github, FileText, Clock, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const ConnectedStudents = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
@@ -48,7 +54,7 @@ const ConnectedStudents = ({ isDark, setIsDark }) => {
       window.open(url, '_blank');
     } catch (err) {
       console.error('Failed to create object URL for resume', err);
-      alert('Unable to load resume');
+      toast.error('Unable to load resume');
     }
   };
 
@@ -74,15 +80,18 @@ const ConnectedStudents = ({ isDark, setIsDark }) => {
               if (!student) return null;
 
               return (
-                <li key={item._id} className="flex flex-col">
+                <li key={item._id} className={`flex flex-col p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
                   {/* Top: Large Image */}
-                  <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden mb-5 bg-indigo-500/10 flex items-center justify-center shadow-sm">
+                  <div className="relative inline-block mx-auto mb-5">
                     {student.profilePicture ? (
-                      <img className="w-full h-full object-cover" src={student.profilePicture} alt={student.name} />
+                      <img className="h-24 w-24 rounded-full object-cover" src={student.profilePicture} alt={student.name} />
                     ) : (
-                      <span className="text-indigo-500 font-black text-6xl shadow-inner">
+                      <div className="h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
                         {student.name ? student.name[0] : 'S'}
-                      </span>
+                      </div>
+                    )}
+                    {isOnline(student.lastActive) && (
+                      <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
                     )}
                   </div>
 

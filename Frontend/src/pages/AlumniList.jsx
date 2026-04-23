@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import API from '../services/api';
 import axios from 'axios';
-import { CheckCircle, XCircle, Eye, X, Briefcase, Award, Linkedin, Github, Book, FileText, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, X, Briefcase, Award, Linkedin, Github, Book, FileText, Clock, Loader2, Phone, Calendar } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const isOnline = (lastActive) => {
+  if (!lastActive) return false;
+  return new Date() - new Date(lastActive) < 5 * 60 * 1000;
+};
 
 const AlumniList = ({ isDark, setIsDark }) => {
   const [dataList, setDataList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [loadingAction, setLoadingAction] = useState(null);
   const [selectedAlumni, setSelectedAlumni] = useState(null);
   const [requestStatus, setRequestStatus] = useState(null);
@@ -14,29 +24,50 @@ const AlumniList = ({ isDark, setIsDark }) => {
   const role = localStorage.getItem('role') || 'Admin'; // Assuming Admin if not set for now
   const userName = localStorage.getItem('userName') || role;
 
-  const fetchData = async () => {
+  const observer = useRef();
+  const lastElementRef = useCallback(node => {
+    if (loading || isFetchingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, isFetchingMore, hasMore]);
+
+  const fetchData = async (pageNum) => {
     try {
+      if (pageNum === 1) setLoading(true);
+      else setIsFetchingMore(true);
+
       if (role === 'Alumni') {
         const token = localStorage.getItem('token');
         if(!token) return;
-        const res = await axios.get('http://localhost:5000/api/requests/alumni', {
+        const res = await axios.get(`http://localhost:5000/api/requests/alumni?page=${pageNum}&limit=12`, {
           headers: { 'x-auth-token': token }
         });
-        const allRequests = res.data.requests || [];
-        setDataList(allRequests.filter(req => req.status === 'Pending'));
+        const newRequests = res.data.requests || [];
+        setDataList(prev => pageNum === 1 ? newRequests : [...prev, ...newRequests]);
+        setHasMore(res.data.hasMore);
       } else {
         // If Admin or other roles, use admin stats string.
-        const res = await API.get('/admin/stats');
-        setDataList(res.data.alumniList || []);
+        const res = await API.get(`/admin/stats?type=alumni&page=${pageNum}&limit=12`);
+        const newAlumni = res.data.alumniList || [];
+        setDataList(prev => pageNum === 1 ? newAlumni : [...prev, ...newAlumni]);
+        setHasMore(res.data.hasMore);
       }
     } catch (err) {
       console.error("Failed to fetch data", err);
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, [role]);
+    fetchData(page);
+  }, [role, page]);
 
   const checkRequestStatus = async (alumniId) => {
     try {
@@ -61,9 +92,10 @@ const AlumniList = ({ isDark, setIsDark }) => {
         headers: { 'x-auth-token': token }
       });
       setRequestStatus('Pending');
+      toast.success('Request sent successfully!');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.msg || 'Failed to send request');
+      toast.error(err.response?.data?.msg || 'Failed to send request');
     } finally {
       setSendingRequest(false);
     }
@@ -76,28 +108,41 @@ const AlumniList = ({ isDark, setIsDark }) => {
       await axios.put(`http://localhost:5000/api/requests/${requestId}/status`, { status }, {
         headers: { 'x-auth-token': token }
       });
-      fetchData(); // Refresh list to reflect updated status
+      setPage(1);
+      fetchData(1); // Refresh list to reflect updated status
+      toast.success("Request updated!");
     } catch (err) {
       console.error(err);
-      alert("Failed to update request");
+      toast.error("Failed to update request");
     } finally {
       setLoadingAction(null);
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to completely delete this user?")) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/admin/${userId}`, {
-          headers: { 'x-auth-token': token }
-        });
-        fetchData(); // refresh list
-      } catch (err) {
-        console.error(err);
-        alert(err.response?.data?.msg || "Failed to delete user");
-      }
-    }
+    toast((t) => (
+      <div>
+        <p className="font-bold mb-3">Are you sure you want to completely delete this user?</p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-sm bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition-colors">Cancel</button>
+          <button onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              const token = localStorage.getItem('token');
+              await axios.delete(`http://localhost:5000/api/admin/${userId}`, {
+                headers: { 'x-auth-token': token }
+              });
+              setPage(1);
+              fetchData(1); // refresh list
+              toast.success("User deleted successfully!");
+            } catch (err) {
+              console.error(err);
+              toast.error(err.response?.data?.msg || "Failed to delete user");
+            }
+          }} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">Delete</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const handleViewResume = (resumeData) => {
@@ -119,9 +164,20 @@ const AlumniList = ({ isDark, setIsDark }) => {
       window.open(url, '_blank');
     } catch (err) {
       console.error('Failed to create object URL for resume', err);
-      alert('Unable to load resume');
+      toast.error('Unable to load resume');
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout isDark={isDark} role={role} userName={userName}>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <Loader2 className="animate-spin text-[#5c4dff] mb-4" size={48} />
+          <p className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading Alumni Data...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout isDark={isDark} role={role} userName={userName}>
@@ -140,19 +196,25 @@ const AlumniList = ({ isDark, setIsDark }) => {
       <div className="py-8">
         <ul role="list" className="mx-auto grid grid-cols-2 gap-x-8 gap-y-16 text-center sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {dataList && dataList.length > 0 ? (
-            dataList.map((item) => {
+            dataList.map((item, index) => {
               const displayData = role === 'Alumni' ? item.student : item;
               if (!displayData) return null;
+              const isLastElement = dataList.length === index + 1;
 
               return (
-                <li key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
-                  {displayData.profilePicture ? (
-                    <img className="mx-auto h-24 w-24 rounded-full object-cover" src={displayData.profilePicture} alt={displayData.name} />
-                  ) : (
-                    <div className="mx-auto h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
-                      {displayData.name ? displayData.name[0] : 'A'}
-                    </div>
-                  )}
+                <li ref={isLastElement ? lastElementRef : null} key={item._id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'border-white/10 bg-[#0f0f12]/50 hover:bg-white/5' : 'border-slate-200 bg-white hover:shadow-xl'}`}>
+                  <div className="relative inline-block mx-auto">
+                    {displayData.profilePicture ? (
+                      <img className="h-24 w-24 rounded-full object-cover" src={displayData.profilePicture} alt={displayData.name} />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-3xl">
+                        {displayData.name ? displayData.name[0] : 'A'}
+                      </div>
+                    )}
+                    {isOnline(displayData.lastActive) && (
+                      <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-[#0f0f12] rounded-full shadow-sm"></span>
+                    )}
+                  </div>
                   <h3 className={`mt-6 text-base font-semibold leading-7 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{displayData.name}</h3>
                   <p className="text-sm leading-6 text-slate-500">{displayData.domain || (role === 'Alumni' ? 'Student' : 'Mentor')}</p>
 
@@ -226,6 +288,11 @@ const AlumniList = ({ isDark, setIsDark }) => {
             </p>
           )}
         </ul>
+        {isFetchingMore && (
+          <div className="flex justify-center mt-8">
+            <Loader2 className="animate-spin text-[#5c4dff]" size={32} />
+          </div>
+        )}
       </div>
 
       {/* Profile Modal Overlay */}
@@ -300,8 +367,18 @@ const AlumniList = ({ isDark, setIsDark }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <ProfileDetailItem icon={<Briefcase />} label="Company" value={selectedAlumni.company} isDark={isDark} />
                 <ProfileDetailItem icon={<FileText />} label="Domain" value={selectedAlumni.domain} isDark={isDark} />
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-white/5 mt-2">
+                  <ProfileDetailItem icon={<Phone />} label="Contact No." value={selectedAlumni.contactNo} isDark={isDark} />
+                  <ProfileDetailItem icon={<Calendar />} label="Academic Year" value={selectedAlumni.academicYear} isDark={isDark} />
+                </div>
+                <ProfileDetailItem icon={<Book />} label="Institute Name" value={selectedAlumni.instituteName} isDark={isDark} />
+                <ProfileDetailItem icon={<Award />} label="Department" value={selectedAlumni.department} isDark={isDark} />
+                <ProfileDetailItem icon={<FileText />} label="Degree/Program" value={selectedAlumni.degree} isDark={isDark} />
+                <ProfileDetailItem icon={<Clock />} label="Session" value={selectedAlumni.session} isDark={isDark} />
+                
                 <ProfileDetailItem icon={<Award />} label="Expertise" value={selectedAlumni.expertise} isDark={isDark} />
                 <ProfileDetailItem icon={<Clock />} label="Experience" value={selectedAlumni.experience ? `${selectedAlumni.experience} Years` : null} isDark={isDark} />
+                
                 <div className="sm:col-span-2">
                   <ProfileDetailItem icon={<Book />} label="Interested Subjects" value={selectedAlumni.interestedSubject} isDark={isDark} />
                 </div>

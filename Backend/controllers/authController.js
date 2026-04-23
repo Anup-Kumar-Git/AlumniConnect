@@ -89,6 +89,39 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { email, password, loginType } = req.body;
+
+  // HARDCODED ADMIN SECURITY BYPASS
+  if (loginType === 'Admin') {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@alumniconnect.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    if (email === adminEmail && password === adminPassword) {
+      
+      // Seed Admin in DB for Profile Persistence (so profile picture and edits save correctly)
+      let user = await User.findOne({ email: adminEmail });
+      if (!user) {
+        user = new User({
+          name: 'System Admin',
+          email: adminEmail,
+          password: 'locked-manual-login', // Cannot login via standard auth route
+          role: 'Admin',
+          isVerified: true
+        });
+        await user.save();
+      }
+
+      const payload = { user: { id: user.id, role: 'Admin' } };
+      
+      jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' }, (err, token) => {
+        if (err) throw err;
+        return res.json({ token, name: user.name, role: 'Admin', profilePicture: user.profilePicture || null });
+      });
+      return; 
+    } else {
+      return res.status(401).json({ msg: 'Invalid Admin Credentials' });
+    }
+  }
+
   try {
     let user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: 'Invalid Credentials' });
@@ -114,6 +147,20 @@ exports.login = async (req, res) => {
       if (err) throw err;
       res.json({ token, name: user.name, role: user.role, profilePicture: user.profilePicture });
     });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.updateHeartbeat = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    user.lastActive = Date.now();
+    await user.save();
+    
+    res.json({ msg: 'Heartbeat updated' });
   } catch (err) {
     res.status(500).send('Server Error');
   }

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Bell, Check, UserCheck, AlertCircle, Heart, MessageSquare } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const NotificationsDropdown = ({ isDark }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const isFirstLoad = useRef(true);
 
   const fetchNotifications = async () => {
     try {
@@ -16,7 +18,23 @@ const NotificationsDropdown = ({ isDark }) => {
         headers: { 'x-auth-token': token }
       });
       const fetched = res.data.notifications || [];
-      setNotifications(fetched);
+      
+      setNotifications(prev => {
+        if (!isFirstLoad.current) {
+          const prevUnreadIds = prev.filter(n => !n.read).map(n => n._id);
+          const newUnread = fetched.filter(n => !n.read && !prevUnreadIds.includes(n._id));
+          
+          newUnread.forEach(n => {
+            toast(n.message, {
+              icon: '🔔',
+              duration: 5000,
+            });
+          });
+        }
+        isFirstLoad.current = false;
+        return fetched;
+      });
+
       setUnreadCount(fetched.filter(n => !n.read).length);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
@@ -26,10 +44,10 @@ const NotificationsDropdown = ({ isDark }) => {
   useEffect(() => {
     fetchNotifications();
 
-    // Check periodically for new notifications (e.g. every 30 seconds)
+    // Check periodically for new notifications (every 10 seconds for real-time feel)
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 30000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
